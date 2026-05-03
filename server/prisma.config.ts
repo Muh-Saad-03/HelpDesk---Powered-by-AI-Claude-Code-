@@ -1,5 +1,9 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import { defineConfig, env } from "prisma/config";
+
+dotenv.config({
+  path: process.env.NODE_ENV === "test" ? ".env.test" : ".env",
+});
 
 type Env = {
   DATABASE_URL: string;

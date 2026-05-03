@@ -10,6 +10,9 @@
     "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:migrate:test": "NODE_ENV=test prisma migrate deploy",
+    "db:reset:test": "NODE_ENV=test prisma migrate reset --force --skip-seed",
+    "db:seed:test": "NODE_ENV=test bun src/seed.ts",
     "db:studio": "prisma studio",
     "db:seed": "bun src/seed.ts",
     "postinstall": "prisma generate"
