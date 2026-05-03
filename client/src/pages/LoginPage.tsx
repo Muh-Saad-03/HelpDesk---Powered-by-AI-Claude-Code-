@@ -1,59 +1,77 @@
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Navigate, useNavigate } from "react-router-dom";
 import { authClient, useSession } from "../lib/auth-client";
+
+const loginSchema = z.object({
+  email: z.email("Enter a valid email"),
+  password: z.string().min(1, "Password is required"),
+});
+
+type LoginInput = z.infer<typeof loginSchema>;
 
 export function LoginPage() {
   const navigate = useNavigate();
   const { data: session, isPending: sessionPending } = useSession();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+    mode: "onChange",
+  });
 
   if (sessionPending) return null;
   if (session) return <Navigate to="/" replace />;
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
-    setSubmitting(true);
+  const onSubmit = handleSubmit(async ({ email, password }) => {
+    setApiError(null);
     await authClient.signIn.email(
       { email, password },
       {
         onSuccess: () => navigate("/", { replace: true }),
-        onError: (ctx) => setError(ctx.error.message ?? "Sign-in failed"),
+        onError: (ctx) => setApiError(ctx.error.message ?? "Sign-in failed"),
       },
     );
-    setSubmitting(false);
-  };
+  });
 
   return (
     <main className="login-page">
-      <form className="login-card" onSubmit={handleSubmit}>
+      <form className="login-card" onSubmit={onSubmit} noValidate>
         <h1>Sign in</h1>
         <label>
           Email
           <input
             type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
-            required
+            aria-invalid={!!errors.email}
+            {...register("email")}
           />
+          {errors.email && (
+            <span className="login-error">{errors.email.message}</span>
+          )}
         </label>
         <label>
           Password
           <input
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
-            required
+            aria-invalid={!!errors.password}
+            {...register("password")}
           />
+          {errors.password && (
+            <span className="login-error">{errors.password.message}</span>
+          )}
         </label>
-        {error && <p className="login-error">{error}</p>}
-        <button type="submit" disabled={submitting}>
-          {submitting ? "Signing in..." : "Sign in"}
+        {apiError && <p className="login-error">{apiError}</p>}
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Signing in..." : "Sign in"}
         </button>
       </form>
     </main>
