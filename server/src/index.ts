@@ -13,7 +13,12 @@ import { auth } from "./auth.ts";
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
 
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+const trustedOrigins = (process.env.TRUSTED_ORIGINS ?? "http://localhost:5173")
+	.split(",")
+	.map((o) => o.trim())
+	.filter(Boolean);
+
+app.use(cors({ origin: trustedOrigins, credentials: true }));
 
 // Better Auth handler — must be mounted before express.json()
 app.all("/api/auth/*splat", toNodeHandler(auth));
@@ -29,8 +34,7 @@ app.get(
 	async (_req: Request, res: Response, next: NextFunction) => {
 		try {
 			const rows = await prisma.$queryRaw<{ now: Date }[]>`SELECT NOW() as now`;
-			const userCount = await prisma.user.count();
-			res.json({ status: "ok", now: rows[0]?.now, userCount });
+			res.json({ status: "ok", now: rows[0]?.now });
 		} catch (err) {
 			next(err);
 		}
@@ -39,7 +43,8 @@ app.get(
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 	console.error(err);
-	res.status(500).json({ error: err.message });
+	const isDev = process.env.NODE_ENV !== "production";
+	res.status(500).json({ error: isDev ? err.message : "Internal server error" });
 });
 
 app.listen(PORT, () => {

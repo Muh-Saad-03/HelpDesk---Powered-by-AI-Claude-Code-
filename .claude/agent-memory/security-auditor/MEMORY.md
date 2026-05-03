@@ -1,0 +1,1 @@
+- [Security Invariants](project_security_invariants.md) — critical invariants, trust boundaries, and known gaps from 2026-05-03 initial audit
