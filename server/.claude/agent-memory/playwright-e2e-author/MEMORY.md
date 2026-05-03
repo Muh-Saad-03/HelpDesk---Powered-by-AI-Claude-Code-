@@ -1,0 +1,5 @@
+- [Playwright config + project structure](playwright_config.md) — 4 projects: setup, chromium (unauth), admin, agent; config in repo root
+- [CJS compat in Playwright files](playwright_cjs_compat.md) — config and globalSetup run in Node CJS context, not ESM/Bun
+- [Login page locators](login_page_locators.md) — CardTitle is a div not h1; stable locator patterns for auth tests
+- [Test users and seeding](test_users.md) — admin@test.local + agent@test.local seeded by seed.ts NODE_ENV=test branch
+- [Storage state pattern](storage_state.md) — admin.json + agent.json in playwright/.auth/, auth.setup.ts persists them

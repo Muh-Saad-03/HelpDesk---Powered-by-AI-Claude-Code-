@@ -4,7 +4,15 @@ build
 .DS_Store
 .env
 .env.local
+.env.test
 *.log
 bun.lock
 .vite
 server/src/generated
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+playwright/.auth/
+.last-run.json

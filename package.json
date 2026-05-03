@@ -7,9 +7,14 @@
     "dev": "bun --filter '*' dev",
     "build": "bun --filter '*' build",
     "dev:server": "bun --filter server dev",
-    "dev:client": "bun --filter client dev"
+    "dev:client": "bun --filter client dev",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:install": "playwright install chromium",
+    "test:e2e:report": "playwright show-report"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/node": "^25.6.0",
     "client": "workspace:*"
   }

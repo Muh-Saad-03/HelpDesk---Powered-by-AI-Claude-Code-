@@ -40,6 +40,7 @@ AI-powered ticket management system. See `project-scope.md` for product scope an
 ```
 client/   React + TS + Vite — dev server on :5173, proxies /api/* to :3001
 server/   Express + TS on Bun — listens on :3001
+e2e/      Playwright tests + global setup; root-level (not a workspace)
 ```
 
 ## Commands
@@ -65,6 +66,12 @@ bun --filter client typecheck
 - **New endpoints**: prefix with `/api/`, return JSON, surface errors through Express's error middleware (4-arg signature) — don't swallow them in handlers.
 - **Env vars**: read via `process.env.X` with a sensible default; document in `server/.env.example`.
 - **No new files unless needed**: edit existing files in place; don't add docs (`*.md`) unless asked.
+
+## Writing tests — use `playwright-e2e-author`
+
+When the user asks to write, scaffold, or extend Playwright end-to-end tests (new specs, regression tests for bug fixes, page object models, auth/role flow coverage, etc.), delegate to the **`playwright-e2e-author`** subagent via the Agent tool. That agent owns the operational details of the test environment (test DB, env loading, global setup/seed, storage state for auth) and is configured to extend the existing setup rather than rebuild it.
+
+Skip the subagent only for trivial one-line edits to an existing test file.
 
 ## Documentation lookups — use Context7
 
