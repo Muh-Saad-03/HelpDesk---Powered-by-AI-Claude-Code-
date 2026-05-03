@@ -1,33 +1,23 @@
-import { useEffect, useState } from "react";
-
-type HealthResponse = { status: string; uptime: number };
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { LoginPage } from "./pages/LoginPage";
+import { Home } from "./pages/Home";
+import { RequireAuth } from "./components/RequireAuth";
 
 export function App() {
-  const [health, setHealth] = useState<HealthResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/health")
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json() as Promise<HealthResponse>;
-      })
-      .then(setHealth)
-      .catch((err: Error) => setError(err.message));
-  }, []);
-
   return (
-    <main>
-      <h1>Helpdesk</h1>
-      {error ? (
-        <p>Server unreachable: {error}</p>
-      ) : health ? (
-        <p>
-          Server is {health.status} (uptime: {health.uptime.toFixed(1)}s)
-        </p>
-      ) : (
-        <p>Checking server...</p>
-      )}
-    </main>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/"
+          element={
+            <RequireAuth>
+              <Home />
+            </RequireAuth>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
