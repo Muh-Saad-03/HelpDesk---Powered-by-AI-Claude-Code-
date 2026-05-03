@@ -11,6 +11,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
+    "db:seed": "bun src/seed.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
