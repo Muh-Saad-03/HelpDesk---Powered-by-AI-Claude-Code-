@@ -6,12 +6,18 @@ import express, {
 	type NextFunction,
 } from "express";
 import cors from "cors";
+import { toNodeHandler } from "better-auth/node";
 import { prisma } from "./db.ts";
+import { auth } from "./auth.ts";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
 
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+
+// Better Auth handler — must be mounted before express.json()
+app.all("/api/auth/*splat", toNodeHandler(auth));
+
 app.use(express.json());
 
 app.get("/api/health", (_req: Request, res: Response) => {
