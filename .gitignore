@@ -7,3 +7,4 @@ build
 *.log
 bun.lock
 .vite
+server/src/generated

@@ -7,9 +7,20 @@ AI-powered ticket management system. See `project-scope.md` for product scope an
 - **Runtime / package manager**: Bun (workspaces)
 - **Server** (`/server`): Express 5 + TypeScript, run directly via `bun --watch src/index.ts`
 - **Client** (`/client`): React 19 + TypeScript + Vite 7
-- Planned (not yet wired): PostgreSQL, Prisma, Claude API, SendGrid/Mailgun
+- **Database**: PostgreSQL 18 (local), Prisma 7 ORM (`prisma-client` provider + `@prisma/adapter-pg`)
+- Planned (not yet wired): Claude API, SendGrid/Mailgun
 
 Note: `tech-stack.md` lists Node.js, but the project actually runs on Bun.
+
+## Database
+
+- Connection string in `server/.env` as `DATABASE_URL` (gitignored). Example in `server/.env.example`.
+- Schema at `server/prisma/schema.prisma`; generated client at `server/src/generated/prisma` (gitignored).
+- Prisma CLI is configured via `server/prisma.config.ts` (loads `DATABASE_URL` via `dotenv/config`).
+- After schema changes, run from `/server`:
+  - `bun run db:migrate` — create + apply a new migration
+  - `bun run db:generate` — regenerate the client
+  - `bun run db:studio` — open Prisma Studio
 
 ## Layout
 
