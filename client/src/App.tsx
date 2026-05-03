@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { LoginPage } from "./pages/LoginPage";
 import { Home } from "./pages/Home";
+import { UsersPage } from "./pages/UsersPage";
 import { RequireAuth } from "./components/RequireAuth";
 
 export function App() {
@@ -13,6 +14,14 @@ export function App() {
           element={
             <RequireAuth>
               <Home />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <RequireAuth role="ADMIN">
+              <UsersPage />
             </RequireAuth>
           }
         />

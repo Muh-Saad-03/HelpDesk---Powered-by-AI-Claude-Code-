@@ -4,13 +4,13 @@ AI-powered ticket management system. See `project-scope.md` for product scope an
 
 ## Stack
 
-- **Runtime / package manager**: Bun (workspaces)
-- **Server** (`/server`): Express 5 + TypeScript, run directly via `bun --watch src/index.ts`
-- **Client** (`/client`): React 19 + TypeScript + Vite 7
-- **Database**: PostgreSQL 18 (local), Prisma 7 ORM (`prisma-client` provider + `@prisma/adapter-pg`)
-- Planned (not yet wired): Claude API, SendGrid/Mailgun
-
-Note: `tech-stack.md` lists Node.js, but the project actually runs on Bun.
+- **Runtime / package manager**: Bun (workspaces) — not Node, despite what `tech-stack.md` says.
+- **Frontend** (`/client`): React 19 + TypeScript, Vite 7 (dev server on :5173), Tailwind v4, shadcn/ui 3.x (`base-nova` preset, `neutral` baseColor, lucide icons), react-router-dom 7, react-hook-form + zod for forms.
+- **Backend** (`/server`): Express 5 + TypeScript on Bun, listens on :3001 (run via `bun --watch src/index.ts`). ESM only. CORS allows the Vite origin with credentials.
+- **Database**: PostgreSQL 18 (local), Prisma 7 ORM (`prisma-client` provider + `@prisma/adapter-pg`).
+- **Auth**: Better Auth 1.6 — server (`server/src/auth.ts`) + `better-auth/react` on the client (`client/src/lib/auth-client.ts`). Email/password only, signup disabled, sessions stored in Postgres. See **Authentication** section below.
+- **AI**: Claude API — _planned, not yet wired_. No `@anthropic-ai/sdk` dependency yet.
+- **Email**: SendGrid/Mailgun — _planned, not yet wired_.
 
 ## Database
 
@@ -21,6 +21,19 @@ Note: `tech-stack.md` lists Node.js, but the project actually runs on Bun.
   - `bun run db:migrate` — create + apply a new migration
   - `bun run db:generate` — regenerate the client
   - `bun run db:studio` — open Prisma Studio
+
+## Authentication
+
+- **Library**: [Better Auth](https://better-auth.com) on both server and client.
+- **Server config**: `server/src/auth.ts` — Prisma adapter (`postgresql`), email/password only, `disableSignUp: true` (users are created by seed/admin, not self-service), no email verification.
+- **Roles**: `Role` enum in `schema.prisma` is `ADMIN` | `AGENT`. New users default to `AGENT`. Role is declared as a Better Auth `additionalField` with `input: false`, so it is **never** writable through the auth API — set it directly in the DB or via Prisma in trusted server code.
+- **Mount order** (`server/src/index.ts`): `app.all("/api/auth/*splat", toNodeHandler(auth))` **must** be mounted before `express.json()`. Better Auth needs the raw body — moving it after `express.json()` breaks signups/sessions silently.
+- **CORS**: `cors({ origin: "http://localhost:5173", credentials: true })`. Browser requests must send cookies; the client uses Better Auth's React hooks which handle this automatically.
+- **Trusted origins**: comma-separated list in `TRUSTED_ORIGINS` (defaults to `http://localhost:5173`).
+- **Client**: `client/src/lib/auth-client.ts` exports `authClient`, `signIn`, `signOut`, `useSession`. Use `useSession()` for reactive session state, and wrap protected routes with `<RequireAuth>` (`client/src/components/RequireAuth.tsx`). Login flow lives in `client/src/pages/LoginPage.tsx`.
+- **Schema models**: `User`, `Session`, `Account`, `Verification` in `schema.prisma` — all generated/managed for Better Auth. Don't rename their `@@map` table names.
+- **Seeding the first admin**: from `/server`, set `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NAME` in `.env`, then run `bun run db:seed`. The script promotes an existing user to `ADMIN` if found, or creates one with a hashed password via `auth.$context.password.hash`.
+- **Required env vars** (in `server/.env`): `BETTER_AUTH_SECRET` (generate with `openssl rand -base64 32`), `BETTER_AUTH_URL`, `TRUSTED_ORIGINS`, plus `ADMIN_*` for seeding. See `server/.env.example`.
 
 ## Layout
 
