@@ -42,35 +42,51 @@ export function LoginPage() {
   });
 
   return (
-    <main className="login-page">
-      <form className="login-card" onSubmit={onSubmit} noValidate>
-        <h1>Sign in</h1>
-        <label>
+    <main className="grid min-h-screen place-items-center bg-gradient-to-b from-indigo-50 via-white to-white p-6">
+      <form
+        className="flex w-full max-w-sm flex-col gap-4 rounded-2xl border border-black/10 bg-white/90 p-9 shadow-xl backdrop-blur"
+        onSubmit={onSubmit}
+        noValidate
+      >
+        <h1 className="mb-1 text-2xl font-semibold tracking-tight">Sign in</h1>
+        <label className="flex flex-col gap-1.5 text-xs font-medium text-gray-600">
           Email
           <input
             type="email"
             autoComplete="email"
             aria-invalid={!!errors.email}
             {...register("email")}
+            className="rounded-lg border border-black/15 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition hover:border-black/25 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 aria-invalid:border-red-500 aria-invalid:focus:ring-red-500/30"
           />
           {errors.email && (
-            <span className="login-error">{errors.email.message}</span>
+            <span className="text-xs font-medium text-red-600">
+              {errors.email.message}
+            </span>
           )}
         </label>
-        <label>
+        <label className="flex flex-col gap-1.5 text-xs font-medium text-gray-600">
           Password
           <input
             type="password"
             autoComplete="current-password"
             aria-invalid={!!errors.password}
             {...register("password")}
+            className="rounded-lg border border-black/15 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition hover:border-black/25 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 aria-invalid:border-red-500 aria-invalid:focus:ring-red-500/30"
           />
           {errors.password && (
-            <span className="login-error">{errors.password.message}</span>
+            <span className="text-xs font-medium text-red-600">
+              {errors.password.message}
+            </span>
           )}
         </label>
-        {apiError && <p className="login-error">{apiError}</p>}
-        <button type="submit" disabled={isSubmitting}>
+        {apiError && (
+          <p className="text-xs font-medium text-red-600">{apiError}</p>
+        )}
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="mt-1 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow transition hover:bg-indigo-700 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
+        >
           {isSubmitting ? "Signing in..." : "Sign in"}
         </button>
       </form>

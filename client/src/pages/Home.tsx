@@ -20,16 +20,16 @@ export function Home() {
   return (
     <>
       <NavBar />
-      <main className="home">
-        <h1>Welcome</h1>
+      <main className="p-8">
+        <h1 className="mb-4 text-2xl font-semibold tracking-tight">Welcome</h1>
         {error ? (
-          <p>Server unreachable: {error}</p>
+          <p className="text-red-600">Server unreachable: {error}</p>
         ) : health ? (
-          <p>
+          <p className="text-gray-700">
             Server is {health.status} (uptime: {health.uptime.toFixed(1)}s)
           </p>
         ) : (
-          <p>Checking server...</p>
+          <p className="text-gray-500">Checking server...</p>
         )}
       </main>
     </>

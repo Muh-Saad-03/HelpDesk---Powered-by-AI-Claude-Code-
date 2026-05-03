@@ -14,12 +14,16 @@ export function NavBar() {
   };
 
   return (
-    <nav className="navbar">
-      <span className="navbar-title">Helpdesk</span>
+    <nav className="flex items-center justify-between border-b border-black/10 px-6 py-3">
+      <span className="font-semibold">Helpdesk</span>
       {session && (
-        <div className="navbar-user">
+        <div className="flex items-center gap-3">
           <span>{session.user.name}</span>
-          <button type="button" onClick={handleSignOut}>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="rounded-md border border-black/15 bg-white px-3 py-1.5 text-sm font-medium hover:bg-gray-50"
+          >
             Sign out
           </button>
         </div>
