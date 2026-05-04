@@ -1,7 +1,19 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { TicketCategory, TicketStatus } from "core";
 import { TicketsTable, type Ticket } from "./TicketsTable";
+
+const defaultSorting = [{ id: "createdAt", desc: true }];
+const noopSortingChange = vi.fn();
+function renderTable(tickets: Ticket[] | undefined) {
+	return render(
+		<TicketsTable
+			tickets={tickets}
+			sorting={defaultSorting}
+			onSortingChange={noopSortingChange}
+		/>,
+	);
+}
 
 const baseTicket: Ticket = {
 	id: "t1",
@@ -15,7 +27,7 @@ const baseTicket: Ticket = {
 
 describe("TicketsTable", () => {
 	it("renders skeleton rows when tickets is undefined", () => {
-		const { container } = render(<TicketsTable tickets={undefined} />);
+		const { container } = renderTable(undefined);
 
 		const skeletons = container.querySelectorAll('[data-slot="skeleton"]');
 		// 5 skeleton rows × 6 skeleton elements (subject + sender top + sender
@@ -28,7 +40,7 @@ describe("TicketsTable", () => {
 		const newer: Ticket = { ...baseTicket, id: "newer", subject: "Newer one" };
 		const older: Ticket = { ...baseTicket, id: "older", subject: "Older one" };
 
-		render(<TicketsTable tickets={[newer, older]} />);
+		renderTable([newer, older]);
 
 		const subjects = screen
 			.getAllByRole("row")
@@ -38,7 +50,7 @@ describe("TicketsTable", () => {
 	});
 
 	it("shows fromName above fromEmail when a name is present", () => {
-		render(<TicketsTable tickets={[baseTicket]} />);
+		renderTable([baseTicket]);
 
 		const row = screen.getByText("Help with billing").closest("tr");
 		expect(row).not.toBeNull();
@@ -50,7 +62,7 @@ describe("TicketsTable", () => {
 
 	it("shows only the email when fromName is null", () => {
 		const anon: Ticket = { ...baseTicket, fromName: null };
-		render(<TicketsTable tickets={[anon]} />);
+		renderTable([anon]);
 
 		const row = screen.getByText("Help with billing").closest("tr");
 		expect(row).not.toBeNull();
@@ -87,9 +99,7 @@ describe("TicketsTable", () => {
 			category: null,
 		};
 
-		render(
-			<TicketsTable tickets={[general, technical, refund, uncategorized]} />,
-		);
+		renderTable([general, technical, refund, uncategorized]);
 
 		expect(
 			within(screen.getByText("General q").closest("tr") as HTMLElement).getByText("General"),
@@ -120,7 +130,7 @@ describe("TicketsTable", () => {
 			status: TicketStatus.CLOSED,
 		};
 
-		render(<TicketsTable tickets={[open, resolved, closed]} />);
+		renderTable([open, resolved, closed]);
 
 		expect(
 			within(screen.getByText("Open one").closest("tr") as HTMLElement).getByText("open"),

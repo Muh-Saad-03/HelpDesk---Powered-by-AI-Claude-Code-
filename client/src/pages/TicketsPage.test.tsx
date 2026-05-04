@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { Role, TicketCategory, TicketStatus } from "core";
 import axios from "axios";
@@ -89,7 +90,7 @@ describe("TicketsPage", () => {
 		expect(screen.getByText("sam@example.com")).toBeInTheDocument();
 	});
 
-	it("calls /api/tickets with credentials and an abort signal", async () => {
+	it("calls /api/tickets with credentials, abort signal, and default sort params", async () => {
 		mockedAxios.get.mockResolvedValueOnce({ data: { tickets: [ticketA] } });
 
 		renderPage();
@@ -98,7 +99,10 @@ describe("TicketsPage", () => {
 		expect(mockedAxios.get).toHaveBeenCalledTimes(1);
 		const [url, config] = mockedAxios.get.mock.calls[0];
 		expect(url).toBe("/api/tickets");
-		expect(config).toMatchObject({ withCredentials: true });
+		expect(config).toMatchObject({
+			withCredentials: true,
+			params: { sortBy: "createdAt", sortOrder: "desc" },
+		});
 		expect(config?.signal).toBeInstanceOf(AbortSignal);
 	});
 
@@ -120,5 +124,164 @@ describe("TicketsPage", () => {
 		expect(screen.getByRole("alert")).toHaveTextContent(
 			/failed to load tickets: network down/i,
 		);
+	});
+
+	it("clicking the Subject header refetches with sortBy=subject, asc", async () => {
+		const user = userEvent.setup();
+		mockedAxios.get.mockResolvedValue({ data: { tickets: [ticketA] } });
+		renderPage();
+		await screen.findByText("Help with billing");
+
+		await user.click(screen.getByRole("button", { name: /subject/i }));
+
+		await waitFor(() => {
+			expect(mockedAxios.get).toHaveBeenCalledTimes(2);
+		});
+		const lastCall = mockedAxios.get.mock.calls.at(-1)!;
+		expect(lastCall[1]).toMatchObject({
+			params: { sortBy: "subject", sortOrder: "asc" },
+		});
+	});
+
+	it("clicking the Subject header twice toggles to desc", async () => {
+		const user = userEvent.setup();
+		mockedAxios.get.mockResolvedValue({ data: { tickets: [ticketA] } });
+		renderPage();
+		await screen.findByText("Help with billing");
+
+		const subjectHeader = screen.getByRole("button", { name: /subject/i });
+		await user.click(subjectHeader);
+		await waitFor(() =>
+			expect(mockedAxios.get.mock.calls.at(-1)?.[1]).toMatchObject({
+				params: { sortBy: "subject", sortOrder: "asc" },
+			}),
+		);
+
+		await user.click(subjectHeader);
+		await waitFor(() =>
+			expect(mockedAxios.get.mock.calls.at(-1)?.[1]).toMatchObject({
+				params: { sortBy: "subject", sortOrder: "desc" },
+			}),
+		);
+	});
+
+	it("selecting a status from the dropdown sends status=OPEN", async () => {
+		const user = userEvent.setup();
+		mockedAxios.get.mockResolvedValue({ data: { tickets: [ticketA] } });
+		renderPage();
+		await screen.findByText("Help with billing");
+
+		await user.selectOptions(
+			screen.getByLabelText(/filter by status/i),
+			TicketStatus.OPEN,
+		);
+
+		await waitFor(() => {
+			expect(mockedAxios.get.mock.calls.at(-1)?.[1]).toMatchObject({
+				params: {
+					sortBy: "createdAt",
+					sortOrder: "desc",
+					status: TicketStatus.OPEN,
+				},
+			});
+		});
+	});
+
+	it("selecting 'All' clears the status filter", async () => {
+		const user = userEvent.setup();
+		mockedAxios.get.mockResolvedValue({ data: { tickets: [ticketA] } });
+		renderPage();
+		await screen.findByText("Help with billing");
+
+		const statusSelect = screen.getByLabelText(/filter by status/i);
+		await user.selectOptions(statusSelect, TicketStatus.RESOLVED);
+		await user.selectOptions(statusSelect, "");
+
+		await waitFor(() => {
+			const params = mockedAxios.get.mock.calls.at(-1)?.[1]?.params ?? {};
+			expect(params).not.toHaveProperty("status");
+		});
+	});
+
+	it("category dropdown sends category=GENERAL_QUESTION", async () => {
+		const user = userEvent.setup();
+		mockedAxios.get.mockResolvedValue({ data: { tickets: [ticketA] } });
+		renderPage();
+		await screen.findByText("Help with billing");
+
+		await user.selectOptions(
+			screen.getByLabelText(/filter by category/i),
+			TicketCategory.GENERAL_QUESTION,
+		);
+
+		await waitFor(() => {
+			expect(mockedAxios.get.mock.calls.at(-1)?.[1]).toMatchObject({
+				params: { category: TicketCategory.GENERAL_QUESTION },
+			});
+		});
+	});
+
+	it("typing in the search box debounces and sends q=…", async () => {
+		const user = userEvent.setup();
+		mockedAxios.get.mockResolvedValue({ data: { tickets: [ticketA] } });
+		renderPage();
+		await screen.findByText("Help with billing");
+
+		await user.type(screen.getByLabelText(/search tickets/i), "billing");
+
+		// Debounce is 300ms; waitFor's default 1000ms is plenty.
+		await waitFor(() => {
+			expect(mockedAxios.get.mock.calls.at(-1)?.[1]).toMatchObject({
+				params: { q: "billing" },
+			});
+		});
+	});
+
+	it("Clear filters button resets status, category, and search", async () => {
+		const user = userEvent.setup();
+		mockedAxios.get.mockResolvedValue({ data: { tickets: [ticketA] } });
+		renderPage();
+		await screen.findByText("Help with billing");
+
+		await user.selectOptions(
+			screen.getByLabelText(/filter by status/i),
+			TicketStatus.OPEN,
+		);
+		await user.selectOptions(
+			screen.getByLabelText(/filter by category/i),
+			TicketCategory.GENERAL_QUESTION,
+		);
+		await user.type(screen.getByLabelText(/search tickets/i), "billing");
+
+		await user.click(screen.getByRole("button", { name: /clear filters/i }));
+
+		await waitFor(() => {
+			const params = mockedAxios.get.mock.calls.at(-1)?.[1]?.params ?? {};
+			expect(params).not.toHaveProperty("status");
+			expect(params).not.toHaveProperty("category");
+			expect(params).not.toHaveProperty("q");
+		});
+	});
+
+	it("clicking the same header a third time stays sorted (never off)", async () => {
+		const user = userEvent.setup();
+		mockedAxios.get.mockResolvedValue({ data: { tickets: [ticketA] } });
+		renderPage();
+		await screen.findByText("Help with billing");
+
+		const subjectHeader = screen.getByRole("button", { name: /subject/i });
+		await user.click(subjectHeader); // asc
+		await user.click(subjectHeader); // desc
+		await user.click(subjectHeader); // would go to "off" — guarded back to asc
+
+		await waitFor(() => {
+			const params = mockedAxios.get.mock.calls.at(-1)?.[1]?.params;
+			expect(params).toMatchObject({ sortBy: "subject" });
+			expect(params.sortOrder).toMatch(/^(asc|desc)$/);
+		});
+		// Specifically: third click flips back to asc.
+		expect(mockedAxios.get.mock.calls.at(-1)?.[1]).toMatchObject({
+			params: { sortBy: "subject", sortOrder: "asc" },
+		});
 	});
 });

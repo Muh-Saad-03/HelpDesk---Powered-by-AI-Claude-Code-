@@ -20,9 +20,26 @@ ticketsRouter.get(
 			res.status(400).json({ error: firstIssueMessage(parsed.error.issues) });
 			return;
 		}
-		const { sortBy, sortOrder } = parsed.data;
+		const { sortBy, sortOrder, status, category, q } = parsed.data;
+
+		type Where = {
+			status?: { in: typeof status };
+			category?: { in: typeof category };
+			OR?: { [k: string]: { contains: string; mode: "insensitive" } }[];
+		};
+		const where: Where = {};
+		if (status && status.length > 0) where.status = { in: status };
+		if (category && category.length > 0) where.category = { in: category };
+		if (q) {
+			where.OR = [
+				{ subject: { contains: q, mode: "insensitive" } },
+				{ fromEmail: { contains: q, mode: "insensitive" } },
+				{ fromName: { contains: q, mode: "insensitive" } },
+			];
+		}
 
 		const tickets = await prisma.ticket.findMany({
+			where,
 			select: {
 				id: true,
 				subject: true,
