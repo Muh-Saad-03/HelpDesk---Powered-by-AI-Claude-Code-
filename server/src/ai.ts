@@ -42,7 +42,10 @@ export type PolishContext = {
 	agentName: string;
 };
 
-function formatCustomer(ctx: PolishContext): string {
+function formatCustomer(ctx: {
+	customerName: string | null;
+	customerEmail: string;
+}): string {
 	return ctx.customerName ?
 			`${ctx.customerName} <${ctx.customerEmail}>`
 		:	ctx.customerEmail;
@@ -89,4 +92,57 @@ export async function polishReplyText(ctx: PolishContext): Promise<string> {
 		},
 	});
 	return `${text.trim()}\n\nBest regards,\n${ctx.agentName}\nSaad.com`;
+}
+
+const SUMMARIZE_SYSTEM_PROMPT = `You are a customer support assistant. You will
+be given a support ticket and the conversation history between the customer and
+the agents. Produce a concise summary an agent can read in a few seconds to
+catch up.
+
+Rules:
+- 3 to 5 short sentences. No bullet points, no headings, no markdown.
+- Cover: what the customer is asking for, key facts/details from the
+  conversation, what has been tried or promised, and the current state
+  (e.g. waiting on customer, waiting on agent, resolved).
+- Stay grounded in the provided text. Do not invent facts, prices, dates,
+  policies, or commitments that are not present.
+- Neutral, professional tone. Refer to the customer as "the customer" rather
+  than by name.
+- Return only the summary text — no preamble, no quotes, no labels.`;
+
+export type SummarizeContext = {
+	subject: string;
+	customerName: string | null;
+	customerEmail: string;
+	originalMessage: string;
+	history: PolishHistoryItem[];
+};
+
+function buildSummarizePrompt(ctx: SummarizeContext): string {
+	return [
+		`Subject: ${ctx.subject}`,
+		`Customer: ${formatCustomer(ctx)}`,
+		"",
+		"Customer's original message:",
+		ctx.originalMessage,
+		"",
+		"Conversation history (oldest first):",
+		formatHistory(ctx.history),
+		"",
+		"Summarize the ticket and conversation for an agent picking it up.",
+	].join("\n");
+}
+
+export async function summarizeTicketText(
+	ctx: SummarizeContext,
+): Promise<string> {
+	const { text } = await generateText({
+		model: openai("gpt-5-nano"),
+		system: SUMMARIZE_SYSTEM_PROMPT,
+		prompt: buildSummarizePrompt(ctx),
+		providerOptions: {
+			openai: { reasoningEffort: "low" },
+		},
+	});
+	return text.trim();
 }
