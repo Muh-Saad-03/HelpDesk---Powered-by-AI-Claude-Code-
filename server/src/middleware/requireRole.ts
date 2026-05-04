@@ -11,7 +11,7 @@ declare global {
 	}
 }
 
-export function requireRole(role: Role) {
+export function requireRole(...roles: [Role, ...Role[]]) {
 	return async (req: Request, res: Response, next: NextFunction) => {
 		const session = await auth.api.getSession({
 			headers: fromNodeHeaders(req.headers),
@@ -22,7 +22,7 @@ export function requireRole(role: Role) {
 			return;
 		}
 
-		if (session.user.role !== role) {
+		if (!roles.includes(session.user.role as Role)) {
 			res.status(403).json({ error: "Forbidden" });
 			return;
 		}

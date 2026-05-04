@@ -2,26 +2,12 @@
 // email provider will call to convert an inbound email into a ticket.
 //
 // The endpoint is unauthenticated by Better Auth; it's gated by a shared
-// secret in the X-Webhook-Secret header. The server reads
-// INBOUND_EMAIL_SECRET from server/.env.test (loaded because the Playwright
-// webServer runs with NODE_ENV=test); we read the same value out of that
-// file here so the spec stays in lockstep with the server.
+// secret in the X-Webhook-Secret header. The secret is read by
+// e2e/inbound-email.ts out of server/.env.test so this spec stays in
+// lockstep with what the server actually accepts.
 
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { test, expect } from "@playwright/test";
-
-function readEnvVar(name: string): string {
-  const envPath = path.join(process.cwd(), "server", ".env.test");
-  const text = readFileSync(envPath, "utf8");
-  const match = text.match(new RegExp(`^${name}="?([^"\\n]+)"?`, "m"));
-  if (!match || !match[1]) {
-    throw new Error(`${name} not found in ${envPath}`);
-  }
-  return match[1];
-}
-
-const TEST_SECRET = readEnvVar("INBOUND_EMAIL_SECRET");
+import { INBOUND_EMAIL_SECRET } from "./inbound-email";
 
 const validBody = {
   fromEmail: "jane@example.com",
@@ -33,7 +19,7 @@ const validBody = {
 test.describe("Inbound email webhook — POST /api/email/inbound", () => {
   test("creates a ticket on a valid signed request", async ({ request }) => {
     const response = await request.post("/api/email/inbound", {
-      headers: { "X-Webhook-Secret": TEST_SECRET },
+      headers: { "X-Webhook-Secret": INBOUND_EMAIL_SECRET },
       data: validBody,
     });
 
@@ -63,7 +49,7 @@ test.describe("Inbound email webhook — POST /api/email/inbound", () => {
     request,
   }) => {
     const response = await request.post("/api/email/inbound", {
-      headers: { "X-Webhook-Secret": TEST_SECRET },
+      headers: { "X-Webhook-Secret": INBOUND_EMAIL_SECRET },
       data: { ...validBody, body: "" },
     });
 
@@ -76,7 +62,7 @@ test.describe("Inbound email webhook — POST /api/email/inbound", () => {
     request,
   }) => {
     const response = await request.post("/api/email/inbound", {
-      headers: { "X-Webhook-Secret": TEST_SECRET },
+      headers: { "X-Webhook-Secret": INBOUND_EMAIL_SECRET },
       data: { ...validBody, subject: "" },
     });
 
@@ -89,7 +75,7 @@ test.describe("Inbound email webhook — POST /api/email/inbound", () => {
     request,
   }) => {
     const response = await request.post("/api/email/inbound", {
-      headers: { "X-Webhook-Secret": TEST_SECRET },
+      headers: { "X-Webhook-Secret": INBOUND_EMAIL_SECRET },
       data: {
         ...validBody,
         fromEmail: "MAILER-DAEMON@example.com",
@@ -106,7 +92,7 @@ test.describe("Inbound email webhook — POST /api/email/inbound", () => {
     request,
   }) => {
     const response = await request.post("/api/email/inbound", {
-      headers: { "X-Webhook-Secret": TEST_SECRET },
+      headers: { "X-Webhook-Secret": INBOUND_EMAIL_SECRET },
       data: { ...validBody, fromEmail: "postmaster@example.com" },
     });
 

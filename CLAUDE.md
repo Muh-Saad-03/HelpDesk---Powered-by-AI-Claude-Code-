@@ -79,6 +79,15 @@ bun --filter client test:watch     # component tests in watch mode (for writing)
 
 There are **two** test surfaces in this repo. Pick the right one for the task — don't write component tests in `e2e/` or e2e tests under `client/src/`.
 
+**Default to component tests.** They are faster, cheaper, and locate failures more precisely. Reach for an e2e test only when a check genuinely requires the real server, real DB, real auth cookies, or a multi-page browser flow — anything that can be expressed against a single component with mocked HTTP/session belongs in a `*.test.tsx`. When you find yourself writing an e2e test, ask: *could a component test with `vi.mock("axios")` and `vi.mock("@/lib/auth-client")` cover this?* If yes, write the component test instead.
+
+E2e is appropriate for:
+- Server route + middleware behavior (e.g. `/api/X` returns 401 unauthenticated, role-gating enforced server-side).
+- Real Better Auth cookie flows that the React mocks would just rubber-stamp (sign-in, sign-out, session expiry).
+- Cross-page browser journeys that span more than one route + real router/storage state.
+
+E2e is *not* appropriate for: rendering states (loading/empty/error), conditional UI based on role, table/list ordering of data the server already supplies, individual form-field validation. Cover those with component tests.
+
 ### Component tests (Vitest + React Testing Library)
 
 For testing a single React component or page in isolation: rendered output, role/text queries, mocked hooks, mocked HTTP.
@@ -89,13 +98,13 @@ For testing a single React component or page in isolation: rendered output, role
 - **Render helper**: use `renderWithQuery` from `client/src/test/renderWithQuery.tsx` to wrap UI in a fresh `QueryClient` (with `retry: false` so failure-path tests don't retry 3×). Compose with `<MemoryRouter>` at the call site if the component uses react-router.
 - **Mocking patterns**:
   - HTTP: `vi.mock("axios")` then `vi.mocked(axios, true).get.mockResolvedValueOnce(...)`. Cover loading, success, empty, and error paths.
-  - Auth/session: `vi.mock("@/lib/auth-client", () => ({ ... }))` with a fake `useSession` returning the role you need — required when rendering anything that includes `<NavBar>`.
+  - Auth/session: `vi.mock("@/lib/auth-client", () => ({ ... }))` with a fake `useSession` returning the role you need — required when rendering anything that includes `<NavBar>`. To vary the session per test, hoist a `vi.fn()` with `vi.hoisted` and have the mock factory call it (see `client/src/components/NavBar.test.tsx`).
 - **Run**: `bun --filter client test` (single run, CI-safe) or `bun --filter client test:watch` (watch mode while writing).
 - Component tests are fine to author directly — no subagent needed.
 
 ### End-to-end tests — use `playwright-e2e-author`
 
-When the user asks to write, scaffold, or extend Playwright end-to-end tests (new specs, regression tests for bug fixes, page object models, auth/role flow coverage, etc.), delegate to the **`playwright-e2e-author`** subagent via the Agent tool. That agent owns the operational details of the test environment (test DB, env loading, global setup/seed, storage state for auth) and is configured to extend the existing setup rather than rebuild it.
+Only reach here when the case actually needs the real server stack (see the policy above). When you do, and the user asks to write, scaffold, or extend Playwright end-to-end tests, delegate to the **`playwright-e2e-author`** subagent via the Agent tool. That agent owns the operational details of the test environment (test DB, env loading, global setup/seed, storage state for auth) and is configured to extend the existing setup rather than rebuild it.
 
 Skip the subagent only for trivial one-line edits to an existing test file.
 

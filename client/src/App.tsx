@@ -3,6 +3,7 @@ import { Role } from "core";
 import { LoginPage } from "./pages/LoginPage";
 import { Home } from "./pages/Home";
 import { UsersPage } from "./pages/UsersPage";
+import { TicketsPage } from "./pages/TicketsPage";
 import { RequireAuth } from "./components/RequireAuth";
 
 export function App() {
@@ -23,6 +24,14 @@ export function App() {
           element={
             <RequireAuth role={Role.ADMIN}>
               <UsersPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/tickets"
+          element={
+            <RequireAuth>
+              <TicketsPage />
             </RequireAuth>
           }
         />

@@ -21,6 +21,14 @@ export function NavBar() {
         <Link to="/" className="font-semibold">
           Helpdesk
         </Link>
+        {session && (
+          <Link
+            to="/tickets"
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            Tickets
+          </Link>
+        )}
         {session?.user.role === Role.ADMIN && (
           <Link
             to="/users"
