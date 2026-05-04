@@ -32,7 +32,7 @@ export function NavBar() {
       {session && (
         <div className="flex items-center gap-3">
           <span className="text-sm text-muted-foreground">
-            {session.user.name} (role: {session.user.role.toLowerCase()})
+            {session.user.name}
           </span>
           <Button variant="outline" size="sm" onClick={handleSignOut}>
             Sign out

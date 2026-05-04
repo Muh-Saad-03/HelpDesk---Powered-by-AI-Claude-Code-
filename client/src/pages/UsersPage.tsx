@@ -2,6 +2,7 @@ import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import { NavBar } from "../components/NavBar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type User = {
   id: string;
@@ -47,7 +48,36 @@ export function UsersPage() {
             </AlertDescription>
           </Alert>
         ) : isPending ? (
-          <p className="text-muted-foreground">Loading…</p>
+          <div className="overflow-hidden rounded-md border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-left">
+                <tr>
+                  <th className="px-4 py-2 font-medium">Name</th>
+                  <th className="px-4 py-2 font-medium">Email</th>
+                  <th className="px-4 py-2 font-medium">Role</th>
+                  <th className="px-4 py-2 font-medium">Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="border-t">
+                    <td className="px-4 py-2">
+                      <Skeleton className="h-4 w-32" />
+                    </td>
+                    <td className="px-4 py-2">
+                      <Skeleton className="h-4 w-48" />
+                    </td>
+                    <td className="px-4 py-2">
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </td>
+                    <td className="px-4 py-2">
+                      <Skeleton className="h-4 w-24" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : users.length === 0 ? (
           <p className="text-muted-foreground">No users found.</p>
         ) : (
