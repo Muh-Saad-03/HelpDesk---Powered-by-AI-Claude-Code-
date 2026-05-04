@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import axios from "axios";
 import { renderWithQuery } from "../test/renderWithQuery";
@@ -134,5 +135,67 @@ describe("UsersPage", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(
       /failed to load users: network down/i,
     );
+  });
+});
+
+// Unique text from CreateUserDialog's body — used as the "is the dialog open?"
+// probe. Picked over the title "New User" because the trigger button shares
+// that label, and over field labels because they may be present in the DOM
+// briefly during close animations.
+const dialogBodyMatcher = /create a new agent account/i;
+
+describe("UsersPage — create-user dialog", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockedAxios.get.mockResolvedValue({ data: { users: [] } });
+  });
+
+  it("opens the dialog when the New User button is clicked", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    // Wait for the initial query to settle so the page has finished its first render.
+    await screen.findByText("No users found.");
+
+    expect(screen.queryByText(dialogBodyMatcher)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /new user/i }));
+
+    expect(await screen.findByText(dialogBodyMatcher)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^name$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
+  });
+
+  it("closes the dialog when Escape is pressed", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await screen.findByText("No users found.");
+    await user.click(screen.getByRole("button", { name: /new user/i }));
+    await screen.findByText(dialogBodyMatcher);
+
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(screen.queryByText(dialogBodyMatcher)).not.toBeInTheDocument();
+    });
+  });
+
+  it("closes the dialog when clicking outside (the backdrop)", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await screen.findByText("No users found.");
+    await user.click(screen.getByRole("button", { name: /new user/i }));
+    await screen.findByText(dialogBodyMatcher);
+
+    const overlay = document.querySelector('[data-slot="dialog-overlay"]');
+    expect(overlay).not.toBeNull();
+    await user.click(overlay as HTMLElement);
+
+    await waitFor(() => {
+      expect(screen.queryByText(dialogBodyMatcher)).not.toBeInTheDocument();
+    });
   });
 });
