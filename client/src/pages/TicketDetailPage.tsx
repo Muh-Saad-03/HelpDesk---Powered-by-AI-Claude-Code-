@@ -6,8 +6,9 @@ import { useParams } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { TicketCategory, TicketStatus } from "core";
 import { AssigneeSelect } from "../components/AssigneeSelect";
+import { CategorySelect } from "../components/CategorySelect";
 import { NavBar } from "../components/NavBar";
-import { CATEGORY_LABELS, StatusPill } from "../components/ticket-fields";
+import { StatusSelect } from "../components/StatusSelect";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link } from "@/components/ui/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -54,7 +55,7 @@ export function TicketDetailPage() {
 	return (
 		<>
 			<NavBar />
-			<main className='mx-auto max-w-3xl p-8'>
+			<main className='mx-auto max-w-5xl p-8'>
 				<Link
 					to='/tickets'
 					variant='muted'
@@ -82,62 +83,76 @@ export function TicketDetailPage() {
 				) : (
 					<article>
 						<header className='mb-6'>
-							<h1 className='mb-3 text-2xl font-semibold tracking-tight'>
+							<h1 className='text-2xl font-semibold tracking-tight'>
 								{data.subject}
 							</h1>
-							<div className='flex flex-wrap items-center gap-2'>
-								<StatusPill status={data.status} />
-								<span className='text-xs text-muted-foreground'>
-									{data.category ? CATEGORY_LABELS[data.category] : "Uncategorized"}
-								</span>
-							</div>
 						</header>
 
-						<div className='mb-6 grid grid-cols-1 gap-x-6 gap-y-4 text-sm sm:grid-cols-2'>
+						<div className='grid grid-cols-1 gap-8 lg:grid-cols-[1fr_120px]'>
 							<div>
-								<div className='mb-1 text-xs text-muted-foreground'>From</div>
+								<dl className='mb-6 space-y-2 text-sm'>
+									<div className='flex flex-wrap gap-x-2'>
+										<dt className='text-muted-foreground'>From:</dt>
+										<dd>
+											{data.fromName ? (
+												<>
+													<span>{data.fromName}</span>{" "}
+													<span className='text-muted-foreground'>
+														&lt;{data.fromEmail}&gt;
+													</span>
+												</>
+											) : (
+												data.fromEmail
+											)}
+										</dd>
+									</div>
+
+									<div className='flex flex-wrap gap-x-2'>
+										<dt className='text-muted-foreground'>Created:</dt>
+										<dd>{dateFormatter.format(new Date(data.createdAt))}</dd>
+									</div>
+
+									<div className='flex flex-wrap gap-x-2'>
+										<dt className='text-muted-foreground'>Updated:</dt>
+										<dd>{dateFormatter.format(new Date(data.updatedAt))}</dd>
+									</div>
+								</dl>
+
+								<section className='rounded-lg border bg-card p-4 text-sm'>
+									<h2 className='mb-3 text-xs font-medium text-muted-foreground'>
+										Message
+									</h2>
+									<div className='mb-3 font-medium'>
+										{data.fromName ?? data.fromEmail}
+									</div>
+									<div className='whitespace-pre-wrap'>{data.body}</div>
+								</section>
+							</div>
+
+							<aside className='space-y-4 text-sm'>
 								<div>
-									{data.fromName ? (
-										<>
-											<span>{data.fromName}</span>{" "}
-											<span className='text-muted-foreground'>
-												&lt;{data.fromEmail}&gt;
-											</span>
-										</>
-									) : (
-										data.fromEmail
-									)}
+									<div className='mb-1 text-xs text-muted-foreground'>Status</div>
+									<StatusSelect
+										ticketId={data.id}
+										currentStatus={data.status}
+									/>
 								</div>
-							</div>
-
-							<div>
-								<div className='mb-1 text-xs text-muted-foreground'>Assignee</div>
-								<AssigneeSelect
-									ticketId={data.id}
-									currentAssigneeId={data.assigneeId}
-								/>
-							</div>
-
-							<div>
-								<div className='mb-1 text-xs text-muted-foreground'>Created</div>
-								<div>{dateFormatter.format(new Date(data.createdAt))}</div>
-							</div>
-
-							<div>
-								<div className='mb-1 text-xs text-muted-foreground'>Updated</div>
-								<div>{dateFormatter.format(new Date(data.updatedAt))}</div>
-							</div>
+								<div>
+									<div className='mb-1 text-xs text-muted-foreground'>Category</div>
+									<CategorySelect
+										ticketId={data.id}
+										currentCategory={data.category}
+									/>
+								</div>
+								<div>
+									<div className='mb-1 text-xs text-muted-foreground'>Assignee</div>
+									<AssigneeSelect
+										ticketId={data.id}
+										currentAssigneeId={data.assigneeId}
+									/>
+								</div>
+							</aside>
 						</div>
-
-						<section className='rounded-lg border bg-card p-4 text-sm'>
-							<h2 className='mb-3 text-xs font-medium text-muted-foreground'>
-								Message
-							</h2>
-							<div className='mb-3 font-medium'>
-								{data.fromName ?? data.fromEmail}
-							</div>
-							<div className='whitespace-pre-wrap'>{data.body}</div>
-						</section>
 					</article>
 				)}
 			</main>

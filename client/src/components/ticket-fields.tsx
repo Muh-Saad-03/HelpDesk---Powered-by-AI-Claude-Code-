@@ -18,8 +18,22 @@ export function StatusPill({ status }: { status: TicketStatus }) {
 	);
 }
 
+export const STATUS_LABELS: Record<TicketStatus, string> = {
+	[TicketStatus.OPEN]: "Open",
+	[TicketStatus.RESOLVED]: "Resolved",
+	[TicketStatus.CLOSED]: "Closed",
+};
+
 export const CATEGORY_LABELS: Record<TicketCategory, string> = {
 	[TicketCategory.GENERAL_QUESTION]: "General",
 	[TicketCategory.TECHNICAL_QUESTION]: "Technical",
 	[TicketCategory.REFUND_REQUEST]: "Refund",
 };
+
+export const STATUS_OPTIONS = (
+	Object.entries(STATUS_LABELS) as [TicketStatus, string][]
+).map(([value, label]) => ({ value, label }));
+
+export const CATEGORY_OPTIONS = (
+	Object.entries(CATEGORY_LABELS) as [TicketCategory, string][]
+).map(([value, label]) => ({ value, label }));

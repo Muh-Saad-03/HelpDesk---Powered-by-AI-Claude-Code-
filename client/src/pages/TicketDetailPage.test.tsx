@@ -122,9 +122,17 @@ describe("TicketDetailPage", () => {
 		// Jane Doe appears in both the "From" meta row and the message box header.
 		expect(screen.getAllByText("Jane Doe").length).toBeGreaterThanOrEqual(2);
 		expect(screen.getByText(/<jane@example.com>/)).toBeInTheDocument();
-		expect(screen.getByText("open")).toBeInTheDocument();
-		expect(screen.getByText("General")).toBeInTheDocument();
-		// "Unassigned" is now the default option label in the assignee select.
+
+		// Status & category are now editable selects — verify the current value
+		// is the one preselected, not just that the labels render anywhere.
+		const statusSelect = (await screen.findByLabelText(
+			/status/i,
+		)) as HTMLSelectElement;
+		expect(statusSelect.value).toBe(TicketStatus.OPEN);
+		const categorySelect = screen.getByLabelText(/category/i) as HTMLSelectElement;
+		expect(categorySelect.value).toBe(TicketCategory.GENERAL_QUESTION);
+
+		// "Unassigned" is the default option label in the assignee select.
 		expect(
 			screen.getByRole("option", { name: "Unassigned" }),
 		).toBeInTheDocument();

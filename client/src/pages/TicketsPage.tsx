@@ -13,10 +13,12 @@ import {
 } from "core";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { NavBar } from "../components/NavBar";
+import { CATEGORY_OPTIONS, STATUS_OPTIONS } from "../components/ticket-fields";
 import { TicketsTable, type Ticket } from "../components/TicketsTable";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SELECT_CLASS } from "@/lib/utils";
 
 type TicketsResponse = {
 	tickets: Ticket[];
@@ -27,21 +29,6 @@ type TicketsResponse = {
 
 const DEFAULT_SORTING: SortingState = [{ id: "createdAt", desc: true }];
 const DEFAULT_PAGE_SIZE: PageSizeOption = 10;
-
-const STATUS_OPTIONS: { value: TicketStatus; label: string }[] = [
-	{ value: TicketStatus.OPEN, label: "Open" },
-	{ value: TicketStatus.RESOLVED, label: "Resolved" },
-	{ value: TicketStatus.CLOSED, label: "Closed" },
-];
-
-const CATEGORY_OPTIONS: { value: TicketCategory; label: string }[] = [
-	{ value: TicketCategory.GENERAL_QUESTION, label: "General" },
-	{ value: TicketCategory.TECHNICAL_QUESTION, label: "Technical" },
-	{ value: TicketCategory.REFUND_REQUEST, label: "Refund" },
-];
-
-const SELECT_CLASS =
-	"h-8 rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50";
 
 export function TicketsPage() {
 	const [sorting, setSorting] = useState<SortingState>(DEFAULT_SORTING);

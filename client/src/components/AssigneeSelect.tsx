@@ -1,12 +1,10 @@
 import axios from "axios";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type AssignTicketInput } from "core";
+import { useQuery } from "@tanstack/react-query";
+import { useUpdateTicket } from "@/lib/useUpdateTicket";
+import { SELECT_CLASS } from "@/lib/utils";
 
 type AssignableUser = { id: string; name: string; email: string };
 type AssignableUsersResponse = { users: AssignableUser[] };
-
-const SELECT_CLASS =
-	"h-8 rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50";
 
 export function AssigneeSelect({
 	ticketId,
@@ -15,8 +13,6 @@ export function AssigneeSelect({
 	ticketId: string;
 	currentAssigneeId: string | null;
 }) {
-	const queryClient = useQueryClient();
-
 	const { data: users, isPending: isLoadingUsers } = useQuery({
 		queryKey: ["users", "assignable"],
 		queryFn: async ({ signal }) => {
@@ -28,26 +24,16 @@ export function AssigneeSelect({
 		},
 	});
 
-	const mutation = useMutation({
-		mutationFn: async (assigneeId: string | null) => {
-			const body: AssignTicketInput = { assigneeId };
-			await axios.patch(`/api/tickets/${ticketId}`, body, {
-				withCredentials: true,
-			});
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["ticket", ticketId] });
-		},
-	});
+	const mutation = useUpdateTicket(ticketId);
 
 	const handleChange = (value: string) => {
-		mutation.mutate(value === "" ? null : value);
+		mutation.mutate({ assigneeId: value === "" ? null : value });
 	};
 
 	return (
 		<div className='flex flex-wrap items-center gap-2'>
 			<select
-				className={SELECT_CLASS}
+				className={`${SELECT_CLASS} w-full`}
 				value={currentAssigneeId ?? ""}
 				disabled={isLoadingUsers || mutation.isPending}
 				onChange={(e) => handleChange(e.target.value)}

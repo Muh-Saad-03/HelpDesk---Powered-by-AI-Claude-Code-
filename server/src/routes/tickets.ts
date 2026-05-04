@@ -1,7 +1,7 @@
 /** @format */
 
 import { Router, type Request, type Response } from "express";
-import { Role, assignTicketSchema, ticketsListQuerySchema } from "core";
+import { Role, ticketsListQuerySchema, updateTicketSchema } from "core";
 import { prisma } from "../db.ts";
 import { requireRole } from "../middleware/requireRole.ts";
 
@@ -95,12 +95,12 @@ ticketsRouter.patch(
 	"/:id",
 	requireRole(Role.ADMIN, Role.AGENT),
 	async (req: Request<{ id: string }>, res: Response) => {
-		const parsed = assignTicketSchema.safeParse(req.body);
+		const parsed = updateTicketSchema.safeParse(req.body);
 		if (!parsed.success) {
 			res.status(400).json({ error: firstIssueMessage(parsed.error.issues) });
 			return;
 		}
-		const { assigneeId } = parsed.data;
+		const { assigneeId, status, category } = parsed.data;
 
 		const ticket = await prisma.ticket.findUnique({
 			where: { id: req.params.id },
@@ -111,7 +111,9 @@ ticketsRouter.patch(
 			return;
 		}
 
-		if (assigneeId !== null) {
+		// Only verify the assignee user when the caller is actually setting one.
+		// `undefined` = field omitted (not changing), `null` = explicit unassign.
+		if (assigneeId !== undefined && assigneeId !== null) {
 			const assignee = await prisma.user.findFirst({
 				where: { id: assigneeId, deletedAt: null },
 				select: { id: true },
@@ -122,9 +124,21 @@ ticketsRouter.patch(
 			}
 		}
 
+		// Build the update payload from defined fields only — Prisma treats
+		// undefined as "leave alone" and null as "set to null", which lines up
+		// with our schema semantics for `assigneeId` / `category`.
+		const data: {
+			assigneeId?: string | null;
+			status?: typeof status;
+			category?: typeof category;
+		} = {};
+		if (assigneeId !== undefined) data.assigneeId = assigneeId;
+		if (status !== undefined) data.status = status;
+		if (category !== undefined) data.category = category;
+
 		const updated = await prisma.ticket.update({
 			where: { id: req.params.id },
-			data: { assigneeId },
+			data,
 			select: TICKET_DETAIL_SELECT,
 		});
 		res.json({ ticket: updated });
