@@ -1,6 +1,6 @@
+import { Role } from "core";
 import { auth } from "./auth.ts";
 import { prisma } from "./db.ts";
-import { Role } from "./generated/prisma/client.ts";
 
 const email = process.env.ADMIN_EMAIL;
 const password = process.env.ADMIN_PASSWORD;

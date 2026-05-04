@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { fromNodeHeaders } from "better-auth/node";
+import { type Role } from "core";
 import { auth } from "../auth.ts";
-import type { Role } from "../generated/prisma/client.ts";
 
 declare global {
 	namespace Express {

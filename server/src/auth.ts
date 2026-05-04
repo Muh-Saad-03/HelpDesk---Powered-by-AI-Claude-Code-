@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { Role } from "core";
 import { prisma } from "./db.ts";
-import { Role } from "./generated/prisma/client.ts";
 
 const secret = process.env.BETTER_AUTH_SECRET;
 if (!secret || secret === "REPLACE_ME_run_openssl_rand_-base64_32") {
