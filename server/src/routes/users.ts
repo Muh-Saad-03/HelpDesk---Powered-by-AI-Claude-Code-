@@ -31,6 +31,23 @@ usersRouter.get(
 	},
 );
 
+// Minimal user list for ticket-assignment dropdowns. Open to AGENT as well as
+// ADMIN — agents need to see other agents to reassign their tickets — but the
+// payload is intentionally narrow (no role / createdAt) so it doesn't double
+// as a roster endpoint.
+usersRouter.get(
+	"/assignable",
+	requireRole(Role.ADMIN, Role.AGENT),
+	async (_req: Request, res: Response) => {
+		const users = await prisma.user.findMany({
+			where: { deletedAt: null },
+			select: { id: true, name: true, email: true },
+			orderBy: { name: "asc" },
+		});
+		res.json({ users });
+	},
+);
+
 usersRouter.post(
 	"/",
 	requireRole(Role.ADMIN),

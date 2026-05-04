@@ -4,3 +4,4 @@ export * from "./enums/ticketCategory.ts";
 export * from "./schemas/user.ts";
 export * from "./schemas/inboundEmail.ts";
 export * from "./schemas/ticketsListQuery.ts";
+export * from "./schemas/assignTicket.ts";

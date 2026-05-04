@@ -10,7 +10,7 @@ vi.mock("axios", async () => {
 	const actual = await vi.importActual<typeof import("axios")>("axios");
 	return {
 		...actual,
-		default: { ...actual.default, get: vi.fn() },
+		default: { ...actual.default, get: vi.fn(), patch: vi.fn() },
 	};
 });
 const mockedAxios = vi.mocked(axios, true);
@@ -46,6 +46,32 @@ const ticket = {
 	updatedAt: "2026-05-04T05:15:17.000Z",
 };
 
+const assignableUsers = [
+	{ id: "u-1", name: "Alex Agent", email: "alex@h.io" },
+	{ id: "u-admin", name: "Test Admin", email: "admin@test.local" },
+];
+
+// Stub axios.get so any call to /api/users/assignable resolves with the
+// shared `assignableUsers` list — every test here renders the detail page,
+// which now mounts <AssigneeSelect> and triggers that GET. Per-test setup
+// only needs to specify the ticket fetch outcome.
+function mockGetByUrl(
+	ticketResponse:
+		| { data: { ticket: typeof ticket } }
+		| { error: unknown },
+) {
+	mockedAxios.get.mockImplementation(async (url: string) => {
+		if (url === "/api/users/assignable") {
+			return { data: { users: assignableUsers } };
+		}
+		if (url.startsWith("/api/tickets/")) {
+			if ("error" in ticketResponse) throw ticketResponse.error;
+			return ticketResponse;
+		}
+		throw new Error(`Unexpected GET ${url}`);
+	});
+}
+
 function renderPage(id = "ta") {
 	return renderWithQuery(
 		<MemoryRouter initialEntries={[`/tickets/${id}`]}>
@@ -70,20 +96,21 @@ describe("TicketDetailPage", () => {
 	});
 
 	it("fetches /api/tickets/:id with the route id", async () => {
-		mockedAxios.get.mockResolvedValueOnce({ data: { ticket } });
+		mockGetByUrl({ data: { ticket } });
 		renderPage("ta");
 
 		await screen.findByRole("heading", { name: ticket.subject });
 
-		expect(mockedAxios.get).toHaveBeenCalledTimes(1);
-		const [url, config] = mockedAxios.get.mock.calls[0];
-		expect(url).toBe("/api/tickets/ta");
-		expect(config).toMatchObject({ withCredentials: true });
-		expect(config?.signal).toBeInstanceOf(AbortSignal);
+		const ticketCall = mockedAxios.get.mock.calls.find(
+			([url]) => url === "/api/tickets/ta",
+		);
+		expect(ticketCall).toBeDefined();
+		expect(ticketCall?.[1]).toMatchObject({ withCredentials: true });
+		expect(ticketCall?.[1]?.signal).toBeInstanceOf(AbortSignal);
 	});
 
 	it("renders the ticket subject, body, sender, and status", async () => {
-		mockedAxios.get.mockResolvedValueOnce({ data: { ticket } });
+		mockGetByUrl({ data: { ticket } });
 		renderPage();
 
 		expect(
@@ -92,15 +119,19 @@ describe("TicketDetailPage", () => {
 		expect(
 			screen.getByText(/charged twice for my subscription/i),
 		).toBeInTheDocument();
-		expect(screen.getByText("Jane Doe")).toBeInTheDocument();
+		// Jane Doe appears in both the "From" meta row and the message box header.
+		expect(screen.getAllByText("Jane Doe").length).toBeGreaterThanOrEqual(2);
 		expect(screen.getByText(/<jane@example.com>/)).toBeInTheDocument();
 		expect(screen.getByText("open")).toBeInTheDocument();
 		expect(screen.getByText("General")).toBeInTheDocument();
-		expect(screen.getByText("Unassigned")).toBeInTheDocument();
+		// "Unassigned" is now the default option label in the assignee select.
+		expect(
+			screen.getByRole("option", { name: "Unassigned" }),
+		).toBeInTheDocument();
 	});
 
-	it("shows assignee info when the ticket is assigned", async () => {
-		mockedAxios.get.mockResolvedValueOnce({
+	it("preselects the current assignee in the dropdown", async () => {
+		mockGetByUrl({
 			data: {
 				ticket: {
 					...ticket,
@@ -111,9 +142,13 @@ describe("TicketDetailPage", () => {
 		});
 		renderPage();
 
-		expect(await screen.findByText("Alex Agent")).toBeInTheDocument();
-		expect(screen.getByText(/<alex@h.io>/)).toBeInTheDocument();
-		expect(screen.queryByText("Unassigned")).not.toBeInTheDocument();
+		const select = (await screen.findByLabelText(
+			/assignee/i,
+		)) as HTMLSelectElement;
+		await waitFor(() => expect(select.value).toBe("u-1"));
+		expect(
+			screen.getByRole("option", { name: "Alex Agent" }),
+		).toBeInTheDocument();
 	});
 
 	it("shows a 'Ticket not found' alert on a 404", async () => {
@@ -131,7 +166,7 @@ describe("TicketDetailPage", () => {
 				data: { error: "Ticket not found" },
 			},
 		);
-		mockedAxios.get.mockRejectedValueOnce(notFound);
+		mockGetByUrl({ error: notFound });
 		renderPage("missing");
 
 		await waitFor(() => {
@@ -140,7 +175,7 @@ describe("TicketDetailPage", () => {
 	});
 
 	it("shows a generic error alert when the request fails for a non-404 reason", async () => {
-		mockedAxios.get.mockRejectedValueOnce(new Error("Network down"));
+		mockGetByUrl({ error: new Error("Network down") });
 		renderPage();
 
 		await waitFor(() => {

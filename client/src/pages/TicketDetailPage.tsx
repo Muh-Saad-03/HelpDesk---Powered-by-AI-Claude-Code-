@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { TicketCategory, TicketStatus } from "core";
+import { AssigneeSelect } from "../components/AssigneeSelect";
 import { NavBar } from "../components/NavBar";
 import { CATEGORY_LABELS, StatusPill } from "../components/ticket-fields";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -92,49 +93,50 @@ export function TicketDetailPage() {
 							</div>
 						</header>
 
-						<dl className='mb-6 grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-[120px_1fr]'>
-							<dt className='text-muted-foreground'>From</dt>
-							<dd>
-								{data.fromName ? (
-									<>
-										<span>{data.fromName}</span>{" "}
-										<span className='text-muted-foreground'>
-											&lt;{data.fromEmail}&gt;
-										</span>
-									</>
-								) : (
-									data.fromEmail
-								)}
-							</dd>
+						<div className='mb-6 grid grid-cols-1 gap-x-6 gap-y-4 text-sm sm:grid-cols-2'>
+							<div>
+								<div className='mb-1 text-xs text-muted-foreground'>From</div>
+								<div>
+									{data.fromName ? (
+										<>
+											<span>{data.fromName}</span>{" "}
+											<span className='text-muted-foreground'>
+												&lt;{data.fromEmail}&gt;
+											</span>
+										</>
+									) : (
+										data.fromEmail
+									)}
+								</div>
+							</div>
 
-							<dt className='text-muted-foreground'>Assignee</dt>
-							<dd>
-								{data.assignee ? (
-									<>
-										<span>{data.assignee.name}</span>{" "}
-										<span className='text-muted-foreground'>
-											&lt;{data.assignee.email}&gt;
-										</span>
-									</>
-								) : (
-									<span className='text-muted-foreground'>Unassigned</span>
-								)}
-							</dd>
+							<div>
+								<div className='mb-1 text-xs text-muted-foreground'>Assignee</div>
+								<AssigneeSelect
+									ticketId={data.id}
+									currentAssigneeId={data.assigneeId}
+								/>
+							</div>
 
-							<dt className='text-muted-foreground'>Created</dt>
-							<dd>{dateFormatter.format(new Date(data.createdAt))}</dd>
+							<div>
+								<div className='mb-1 text-xs text-muted-foreground'>Created</div>
+								<div>{dateFormatter.format(new Date(data.createdAt))}</div>
+							</div>
 
-							<dt className='text-muted-foreground'>Updated</dt>
-							<dd>{dateFormatter.format(new Date(data.updatedAt))}</dd>
-						</dl>
+							<div>
+								<div className='mb-1 text-xs text-muted-foreground'>Updated</div>
+								<div>{dateFormatter.format(new Date(data.updatedAt))}</div>
+							</div>
+						</div>
 
-						<section>
-							<h2 className='mb-2 text-sm font-medium text-muted-foreground'>
+						<section className='rounded-lg border bg-card p-4 text-sm'>
+							<h2 className='mb-3 text-xs font-medium text-muted-foreground'>
 								Message
 							</h2>
-							<div className='rounded-lg border bg-card p-4 text-sm whitespace-pre-wrap'>
-								{data.body}
+							<div className='mb-3 font-medium'>
+								{data.fromName ?? data.fromEmail}
 							</div>
+							<div className='whitespace-pre-wrap'>{data.body}</div>
 						</section>
 					</article>
 				)}
