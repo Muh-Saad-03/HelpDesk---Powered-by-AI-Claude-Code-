@@ -1,8 +1,8 @@
 /** @format */
 
-import { generateText } from "ai";
+import { generateObject, generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
-import { SenderType } from "core";
+import { SenderType, TicketCategory } from "core";
 
 const POLISH_SYSTEM_PROMPT = `You are a customer support agent's writing assistant.
 You will be given a support ticket: the subject, the customer's original message,
@@ -145,4 +145,43 @@ export async function summarizeTicketText(
 		},
 	});
 	return text.trim();
+}
+
+const CLASSIFY_SYSTEM_PROMPT = `You classify customer support tickets into one
+of three categories. Read the subject and body and choose the single best fit.
+
+Categories:
+- GENERAL_QUESTION — questions about the product, company, account, billing
+  details, how-to inquiries, or anything that doesn't fit the other two.
+- TECHNICAL_QUESTION — bug reports, errors, crashes, broken features,
+  integration issues, or anything where the customer needs technical help.
+- REFUND_REQUEST — the customer is asking for a refund, a chargeback, to
+  cancel and be reimbursed, or otherwise wants their money back.
+
+Pick exactly one. If the ticket is mixed, pick the category that best matches
+the customer's primary intent.`;
+
+export type ClassifyContext = {
+	subject: string;
+	body: string;
+};
+
+export async function classifyTicketCategory(
+	ctx: ClassifyContext,
+): Promise<TicketCategory> {
+	const { object } = await generateObject({
+		model: openai("gpt-5-nano"),
+		output: "enum",
+		enum: [
+			TicketCategory.GENERAL_QUESTION,
+			TicketCategory.TECHNICAL_QUESTION,
+			TicketCategory.REFUND_REQUEST,
+		],
+		system: CLASSIFY_SYSTEM_PROMPT,
+		prompt: [`Subject: ${ctx.subject}`, "", "Body:", ctx.body].join("\n"),
+		providerOptions: {
+			openai: { reasoningEffort: "low" },
+		},
+	});
+	return object as TicketCategory;
 }

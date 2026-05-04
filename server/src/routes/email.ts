@@ -3,6 +3,7 @@
 import { Router, type Request, type Response } from "express";
 import { timingSafeEqual } from "node:crypto";
 import { TicketStatus, inboundEmailSchema } from "core";
+import { classifyTicketCategory } from "../ai.ts";
 import { prisma } from "../db.ts";
 
 function firstIssueMessage(issues: readonly { message: string }[]): string {
@@ -51,9 +52,10 @@ emailRouter.post("/inbound", async (req: Request, res: Response) => {
 		return;
 	}
 
+	const finalSubject = subject.trim() === "" ? "(no subject)" : subject;
 	const ticket = await prisma.ticket.create({
 		data: {
-			subject: subject.trim() === "" ? "(no subject)" : subject,
+			subject: finalSubject,
 			body,
 			fromEmail,
 			fromName: fromName ?? null,
@@ -63,4 +65,23 @@ emailRouter.post("/inbound", async (req: Request, res: Response) => {
 	});
 
 	res.status(201).json({ ticket });
+
+	// Fire-and-forget AI classification: the webhook responds immediately so
+	// the email provider isn't blocked on an LLM call. The category is filled
+	// in once the model returns. Errors are logged but never crash the server
+	// — an unclassified ticket is still a usable ticket.
+	void classifyTicketCategory({ subject: finalSubject, body })
+		.then((category) =>
+			prisma.ticket.update({
+				where: { id: ticket.id },
+				data: { category },
+				select: { id: true },
+			}),
+		)
+		.catch((err: unknown) => {
+			console.error(
+				`Auto-classify failed for ticket ${ticket.id}:`,
+				err instanceof Error ? err.message : err,
+			);
+		});
 });

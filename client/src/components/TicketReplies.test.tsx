@@ -157,6 +157,98 @@ describe("TicketReplies", () => {
 		expect(polish).toBeEnabled();
 	});
 
+	it("polishes the draft and replaces the textarea with the response body", async () => {
+		const user = userEvent.setup();
+		mockReplies({ data: { replies: [] } });
+		const polished =
+			"Hello Jane,\n\nWe are looking into this now and will follow up shortly.\n\nBest regards,\nTest Admin\nSaad.com";
+		mockedAxios.post.mockResolvedValueOnce({ data: { body: polished } });
+
+		renderWithQuery(<TicketReplies ticket={ticket} />);
+		await screen.findByText(/no replies yet/i);
+
+		const textarea = screen.getByLabelText(/add a reply/i) as HTMLTextAreaElement;
+		// Leading/trailing whitespace should be trimmed before sending.
+		await user.type(textarea, "  looking into it  ");
+		await user.click(screen.getByRole("button", { name: /^polish$/i }));
+
+		await waitFor(() => {
+			expect(mockedAxios.post).toHaveBeenCalledTimes(1);
+		});
+		const [url, body, config] = mockedAxios.post.mock.calls[0];
+		expect(url).toBe("/api/tickets/t1/polish-reply");
+		expect(body).toEqual({ body: "looking into it" });
+		expect(config).toMatchObject({ withCredentials: true });
+
+		await waitFor(() => expect(textarea.value).toBe(polished));
+	});
+
+	it("shows 'Polishing…' while the request is in flight and disables Send", async () => {
+		const user = userEvent.setup();
+		mockReplies({ data: { replies: [] } });
+		let resolvePolish!: (value: { data: { body: string } }) => void;
+		mockedAxios.post.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					resolvePolish = resolve;
+				}),
+		);
+
+		renderWithQuery(<TicketReplies ticket={ticket} />);
+		await screen.findByText(/no replies yet/i);
+
+		await user.type(screen.getByLabelText(/add a reply/i), "draft");
+		await user.click(screen.getByRole("button", { name: /^polish$/i }));
+
+		const polishingBtn = await screen.findByRole("button", {
+			name: /polishing/i,
+		});
+		expect(polishingBtn).toBeDisabled();
+		expect(screen.getByRole("button", { name: /send reply/i })).toBeDisabled();
+
+		resolvePolish({ data: { body: "Polished body." } });
+
+		await waitFor(() =>
+			expect(screen.getByRole("button", { name: /^polish$/i })).toBeEnabled(),
+		);
+	});
+
+	it("surfaces the server error message when polishing fails", async () => {
+		const user = userEvent.setup();
+		mockReplies({ data: { replies: [] } });
+		const headers = new AxiosHeaders();
+		mockedAxios.post.mockRejectedValueOnce(
+			new AxiosError(
+				"Request failed with status code 500",
+				"ERR_BAD_REQUEST",
+				{ headers, url: "/api/tickets/t1/polish-reply" } as never,
+				undefined,
+				{
+					status: 500,
+					statusText: "Internal Server Error",
+					headers,
+					config: { headers } as never,
+					data: { error: "OPENAI_API_KEY missing" },
+				},
+			),
+		);
+
+		renderWithQuery(<TicketReplies ticket={ticket} />);
+		await screen.findByText(/no replies yet/i);
+
+		const textarea = screen.getByLabelText(/add a reply/i) as HTMLTextAreaElement;
+		await user.type(textarea, "draft");
+		await user.click(screen.getByRole("button", { name: /^polish$/i }));
+
+		await waitFor(() => {
+			expect(screen.getByRole("alert")).toHaveTextContent(
+				/failed to polish reply: OPENAI_API_KEY missing/i,
+			);
+		});
+		// The draft is preserved on failure.
+		expect(textarea.value).toBe("draft");
+	});
+
 	it("surfaces the server error message when the POST fails", async () => {
 		const user = userEvent.setup();
 		mockReplies({ data: { replies: [] } });

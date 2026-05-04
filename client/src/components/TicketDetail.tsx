@@ -1,6 +1,7 @@
 /** @format */
 
 import type { Ticket } from "core";
+import { TicketSummary } from "./TicketSummary";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
 	dateStyle: "medium",
@@ -53,6 +54,8 @@ export function TicketDetail({ ticket }: { ticket: Ticket }) {
 				</div>
 				<div className='whitespace-pre-wrap'>{ticket.body}</div>
 			</section>
+
+			<TicketSummary ticketId={ticket.id} />
 		</>
 	);
 }
