@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import axios from "axios";
+import { useQuery } from "@tanstack/react-query";
 import { NavBar } from "../components/NavBar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -17,26 +18,21 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 });
 
 export function UsersPage() {
-  const [users, setUsers] = useState<User[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/users", { credentials: "include" })
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return (await res.json()) as UsersResponse;
-      })
-      .then((data) => {
-        if (!cancelled) setUsers(data.users);
-      })
-      .catch((err: Error) => {
-        if (!cancelled) setError(err.message);
+  const {
+    data: users,
+    isPending,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["users"],
+    queryFn: async ({ signal }) => {
+      const res = await axios.get<UsersResponse>("/api/users", {
+        withCredentials: true,
+        signal,
       });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+      return res.data.users;
+    },
+  });
 
   return (
     <>
@@ -44,11 +40,13 @@ export function UsersPage() {
       <main className="p-8">
         <h1 className="mb-6 text-2xl font-semibold tracking-tight">Users</h1>
 
-        {error ? (
+        {isError ? (
           <Alert variant="destructive">
-            <AlertDescription>Failed to load users: {error}</AlertDescription>
+            <AlertDescription>
+              Failed to load users: {error.message}
+            </AlertDescription>
           </Alert>
-        ) : users === null ? (
+        ) : isPending ? (
           <p className="text-muted-foreground">Loading…</p>
         ) : users.length === 0 ? (
           <p className="text-muted-foreground">No users found.</p>

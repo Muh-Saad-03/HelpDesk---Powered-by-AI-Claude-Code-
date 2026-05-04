@@ -5,7 +5,7 @@ AI-powered ticket management system. See `project-scope.md` for product scope an
 ## Stack
 
 - **Runtime / package manager**: Bun (workspaces) — not Node, despite what `tech-stack.md` says.
-- **Frontend** (`/client`): React 19 + TypeScript, Vite 7 (dev server on :5173), Tailwind v4, shadcn/ui 3.x (`base-nova` preset, `neutral` baseColor, lucide icons), react-router-dom 7, react-hook-form + zod for forms.
+- **Frontend** (`/client`): React 19 + TypeScript, Vite 7 (dev server on :5173), Tailwind v4, shadcn/ui 3.x (`base-nova` preset, `neutral` baseColor, lucide icons), react-router-dom 7, react-hook-form + zod for forms, **axios** for HTTP, **TanStack Query** (`@tanstack/react-query`) for server state.
 - **Backend** (`/server`): Express 5 + TypeScript on Bun, listens on :3001 (run via `bun --watch src/index.ts`). ESM only. CORS allows the Vite origin with credentials.
 - **Database**: PostgreSQL 18 (local), Prisma 7 ORM (`prisma-client` provider + `@prisma/adapter-pg`).
 - **Auth**: Better Auth 1.6 — server (`server/src/auth.ts`) + `better-auth/react` on the client (`client/src/lib/auth-client.ts`). Email/password only, signup disabled, sessions stored in Postgres. See **Authentication** section below.
@@ -61,7 +61,7 @@ bun --filter client typecheck
 - **Runtime**: Bun, not Node — use `bun` / `bunx`, not `npm` / `npx` / `node`.
 - **Modules**: ESM only (`"type": "module"`). Use `import` / `export`, not `require`.
 - **Server**: Express 5 typed handlers; annotate `Request`, `Response`, `NextFunction` with `type` imports.
-- **Client → server calls**: use relative paths (`/api/...`) so Vite's dev proxy handles them; never hardcode `http://localhost:3001`.
+- **Client → server calls**: use relative paths (`/api/...`) so Vite's dev proxy handles them; never hardcode `http://localhost:3001`. Use **axios** for the request and wrap reads in **TanStack Query** (`useQuery` / `useMutation`) — don't reach for raw `fetch` or hand-rolled `useEffect` + `useState` data plumbing. Pass the `signal` from the `queryFn` argument into axios so cancellation works on unmount. The `QueryClientProvider` is already mounted in `client/src/main.tsx`.
 - **TypeScript**: strict mode everywhere. Prefer `type` imports for types-only symbols.
 - **New endpoints**: prefix with `/api/`, return JSON, surface errors through Express's error middleware (4-arg signature) — don't swallow them in handlers.
 - **Env vars**: read via `process.env.X` with a sensible default; document in `server/.env.example`.
