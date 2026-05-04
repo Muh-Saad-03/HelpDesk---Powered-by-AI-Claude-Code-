@@ -3,8 +3,8 @@
 import { Router, type Request, type Response } from "express";
 import { timingSafeEqual } from "node:crypto";
 import { TicketStatus, inboundEmailSchema } from "core";
-import { classifyTicketCategory } from "../ai.ts";
 import { prisma } from "../db.ts";
+import { enqueueClassify } from "../queue.ts";
 
 function firstIssueMessage(issues: readonly { message: string }[]): string {
 	return issues[0]?.message ?? "Invalid input";
@@ -52,10 +52,9 @@ emailRouter.post("/inbound", async (req: Request, res: Response) => {
 		return;
 	}
 
-	const finalSubject = subject.trim() === "" ? "(no subject)" : subject;
 	const ticket = await prisma.ticket.create({
 		data: {
-			subject: finalSubject,
+			subject: subject.trim() === "" ? "(no subject)" : subject,
 			body,
 			fromEmail,
 			fromName: fromName ?? null,
@@ -64,24 +63,11 @@ emailRouter.post("/inbound", async (req: Request, res: Response) => {
 		select: { id: true },
 	});
 
-	res.status(201).json({ ticket });
+	// Enqueue classification on pg-boss so the LLM call runs out-of-band.
+	// The webhook returns 201 immediately; a worker picks the job up and
+	// fills in `ticket.category`. Durable across restarts and retried on
+	// transient failure (default retryLimit = 2).
+	await enqueueClassify(ticket.id);
 
-	// Fire-and-forget AI classification: the webhook responds immediately so
-	// the email provider isn't blocked on an LLM call. The category is filled
-	// in once the model returns. Errors are logged but never crash the server
-	// — an unclassified ticket is still a usable ticket.
-	void classifyTicketCategory({ subject: finalSubject, body })
-		.then((category) =>
-			prisma.ticket.update({
-				where: { id: ticket.id },
-				data: { category },
-				select: { id: true },
-			}),
-		)
-		.catch((err: unknown) => {
-			console.error(
-				`Auto-classify failed for ticket ${ticket.id}:`,
-				err instanceof Error ? err.message : err,
-			);
-		});
+	res.status(201).json({ ticket });
 });

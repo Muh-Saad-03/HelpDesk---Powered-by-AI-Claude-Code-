@@ -9,6 +9,7 @@ import cors from "cors";
 import { toNodeHandler } from "better-auth/node";
 import { prisma } from "./db.ts";
 import { auth } from "./auth.ts";
+import { startQueue, stopQueue } from "./queue.ts";
 import { usersRouter } from "./routes/users.ts";
 import { emailRouter } from "./routes/email.ts";
 import { ticketsRouter } from "./routes/tickets.ts";
@@ -49,6 +50,17 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 		.json({ error: isDev ? err.message : "Internal server error" });
 });
 
-app.listen(PORT, () => {
+await startQueue();
+
+const server = app.listen(PORT, () => {
 	console.log(`Server listening on http://localhost:${PORT}`);
 });
+
+async function shutdown(signal: string): Promise<void> {
+	console.log(`Received ${signal}, shutting down...`);
+	await stopQueue();
+	server.close(() => process.exit(0));
+}
+
+process.on("SIGINT", () => void shutdown("SIGINT"));
+process.on("SIGTERM", () => void shutdown("SIGTERM"));
