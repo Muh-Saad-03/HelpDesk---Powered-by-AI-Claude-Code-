@@ -3,11 +3,13 @@
 import { Router, type Request, type Response } from "express";
 import {
 	createReplySchema,
+	polishReplySchema,
 	Role,
 	SenderType,
 	ticketsListQuerySchema,
 	updateTicketSchema,
 } from "core";
+import { polishReplyText } from "../ai.ts";
 import { prisma } from "../db.ts";
 import { requireRole } from "../middleware/requireRole.ts";
 
@@ -211,5 +213,54 @@ ticketsRouter.post(
 			select: REPLY_SELECT,
 		});
 		res.status(201).json({ reply });
+	},
+);
+
+ticketsRouter.post(
+	"/:id/polish-reply",
+	requireRole(Role.ADMIN, Role.AGENT),
+	async (req: Request<{ id: string }>, res: Response) => {
+		const parsed = polishReplySchema.safeParse(req.body);
+		if (!parsed.success) {
+			res.status(400).json({ error: firstIssueMessage(parsed.error.issues) });
+			return;
+		}
+
+		const ticket = await prisma.ticket.findUnique({
+			where: { id: req.params.id },
+			select: {
+				subject: true,
+				body: true,
+				fromName: true,
+				fromEmail: true,
+				replies: {
+					orderBy: { createdAt: "asc" },
+					select: {
+						body: true,
+						senderType: true,
+						author: { select: { name: true } },
+					},
+				},
+			},
+		});
+		if (!ticket) {
+			res.status(404).json({ error: "Ticket not found" });
+			return;
+		}
+
+		const polished = await polishReplyText({
+			subject: ticket.subject,
+			customerName: ticket.fromName,
+			customerEmail: ticket.fromEmail,
+			originalMessage: ticket.body,
+			history: ticket.replies.map((r) => ({
+				senderType: r.senderType as SenderType,
+				authorName: r.author?.name ?? null,
+				body: r.body,
+			})),
+			draft: parsed.data.body,
+			agentName: req.session!.user.name,
+		});
+		res.json({ body: polished });
 	},
 );

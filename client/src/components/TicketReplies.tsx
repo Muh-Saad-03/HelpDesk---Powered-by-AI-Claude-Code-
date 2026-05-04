@@ -8,6 +8,7 @@ import {
 	createReplySchema,
 	SenderType,
 	type CreateReplyInput,
+	type PolishReplyInput,
 	type Ticket,
 } from "core";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -60,6 +61,9 @@ export function TicketReplies({ ticket }: { ticket: Ticket }) {
 		control,
 		handleSubmit,
 		reset,
+		getValues,
+		setValue,
+		watch,
 		formState: { isSubmitting },
 	} = useForm<CreateReplyInput>({
 		resolver: zodResolver(createReplySchema),
@@ -79,11 +83,40 @@ export function TicketReplies({ ticket }: { ticket: Ticket }) {
 		},
 	});
 
+	const polishMutation = useMutation({
+		mutationFn: async (input: PolishReplyInput) => {
+			const res = await axios.post<{ body: string }>(
+				`/api/tickets/${ticket.id}/polish-reply`,
+				input,
+				{ withCredentials: true },
+			);
+			return res.data.body;
+		},
+		onSuccess: (polished) => {
+			setValue("body", polished, {
+				shouldDirty: true,
+				shouldValidate: false,
+			});
+		},
+	});
+
 	const submitError = mutation.error as AxiosError<{ error?: string }> | null;
 	const submitErrorMessage =
 		submitError?.response?.data?.error ?? submitError?.message;
 
+	const polishError = polishMutation.error as AxiosError<{
+		error?: string;
+	}> | null;
+	const polishErrorMessage =
+		polishError?.response?.data?.error ?? polishError?.message;
+
 	const onSubmit = handleSubmit((values) => mutation.mutate(values));
+
+	const onPolish = () => {
+		polishMutation.mutate({ body: getValues("body").trim() });
+	};
+
+	const isReplyEmpty = watch("body").trim().length === 0;
 
 	return (
 		<section className='mt-8'>
@@ -149,11 +182,11 @@ export function TicketReplies({ ticket }: { ticket: Ticket }) {
 							<textarea
 								{...field}
 								id='reply-body'
-								rows={4}
+								rows={10}
 								placeholder='Write a reply…'
 								aria-invalid={fieldState.invalid}
-								disabled={mutation.isPending}
-								className={TEXTAREA_CLASS}
+								disabled={mutation.isPending || polishMutation.isPending}
+								className={`${TEXTAREA_CLASS} min-h-48 resize-y`}
 							/>
 							{fieldState.invalid && (
 								<FieldError errors={[fieldState.error]} />
@@ -170,10 +203,34 @@ export function TicketReplies({ ticket }: { ticket: Ticket }) {
 					</Alert>
 				)}
 
-				<div className='mt-3 flex justify-end'>
+				{polishErrorMessage && !polishMutation.isPending && (
+					<Alert
+						variant='destructive'
+						className='mt-3'>
+						<AlertDescription>
+							Failed to polish reply: {polishErrorMessage}
+						</AlertDescription>
+					</Alert>
+				)}
+
+				<div className='mt-3 flex justify-end gap-2'>
+					<Button
+						type='button'
+						variant='outline'
+						onClick={onPolish}
+						disabled={
+							mutation.isPending || polishMutation.isPending || isReplyEmpty
+						}>
+						{polishMutation.isPending ? "Polishing…" : "Polish"}
+					</Button>
 					<Button
 						type='submit'
-						disabled={mutation.isPending || isSubmitting}>
+						disabled={
+							mutation.isPending ||
+							polishMutation.isPending ||
+							isSubmitting ||
+							isReplyEmpty
+						}>
 						{mutation.isPending ? "Sending…" : "Send reply"}
 					</Button>
 				</div>

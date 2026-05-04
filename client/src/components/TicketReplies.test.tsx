@@ -131,17 +131,30 @@ describe("TicketReplies", () => {
 		await waitFor(() => expect(textarea.value).toBe(""));
 	});
 
-	it("blocks empty submissions client-side", async () => {
+	it("disables Send and Polish when the reply is empty", async () => {
 		const user = userEvent.setup();
 		mockReplies({ data: { replies: [] } });
 
 		renderWithQuery(<TicketReplies ticket={ticket} />);
 		await screen.findByText(/no replies yet/i);
 
-		await user.click(screen.getByRole("button", { name: /send reply/i }));
+		const send = screen.getByRole("button", { name: /send reply/i });
+		const polish = screen.getByRole("button", { name: /polish/i });
+		expect(send).toBeDisabled();
+		expect(polish).toBeDisabled();
 
-		await screen.findByText(/reply cannot be empty/i);
+		await user.click(send);
 		expect(mockedAxios.post).not.toHaveBeenCalled();
+
+		// Whitespace-only also counts as empty.
+		await user.type(screen.getByLabelText(/add a reply/i), "   ");
+		expect(send).toBeDisabled();
+		expect(polish).toBeDisabled();
+
+		// Real content re-enables both.
+		await user.type(screen.getByLabelText(/add a reply/i), "hello");
+		expect(send).toBeEnabled();
+		expect(polish).toBeEnabled();
 	});
 
 	it("surfaces the server error message when the POST fails", async () => {

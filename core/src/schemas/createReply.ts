@@ -12,3 +12,10 @@ export const createReplySchema = z.object({
 });
 
 export type CreateReplyInput = z.infer<typeof createReplySchema>;
+
+// Body for POST /api/tickets/:id/polish-reply. Same shape as a reply draft —
+// the agent's draft text is the only input; ticket context is loaded
+// server-side.
+export const polishReplySchema = createReplySchema;
+
+export type PolishReplyInput = z.infer<typeof polishReplySchema>;
