@@ -24,6 +24,9 @@ const arrayOf = <T extends z.ZodEnum<Record<string, string>>>(schema: T) =>
 		.union([schema, z.array(schema)])
 		.transform((v): z.infer<T>[] => (Array.isArray(v) ? v : [v]));
 
+export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
+export type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number];
+
 export const ticketsListQuerySchema = z.object({
 	sortBy: z.enum(TICKET_SORT_FIELDS).default("createdAt"),
 	sortOrder: z.enum(SORT_ORDERS).default("desc"),
@@ -37,5 +40,8 @@ export const ticketsListQuerySchema = z.object({
 		.min(1)
 		.optional()
 		.or(z.literal("").transform(() => undefined)),
+	// Pagination. Both arrive as strings on the wire; coerce to int and bound.
+	page: z.coerce.number().int().min(1).default(1),
+	pageSize: z.coerce.number().int().min(1).max(100).default(10),
 });
 export type TicketsListQuery = z.infer<typeof ticketsListQuerySchema>;

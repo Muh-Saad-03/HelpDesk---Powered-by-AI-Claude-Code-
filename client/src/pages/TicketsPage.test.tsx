@@ -35,7 +35,31 @@ function renderPage() {
 	);
 }
 
-const ticketA = {
+type Ticket = {
+	id: string;
+	subject: string;
+	status: TicketStatus;
+	category: TicketCategory | null;
+	fromEmail: string;
+	fromName: string | null;
+	createdAt: string;
+};
+
+function makeResponse(
+	tickets: Ticket[],
+	opts: { total?: number; page?: number; pageSize?: number } = {},
+) {
+	return {
+		data: {
+			tickets,
+			total: opts.total ?? tickets.length,
+			page: opts.page ?? 1,
+			pageSize: opts.pageSize ?? 25,
+		},
+	};
+}
+
+const ticketA: Ticket = {
 	id: "ta",
 	subject: "Help with billing",
 	status: TicketStatus.OPEN,
@@ -44,7 +68,7 @@ const ticketA = {
 	fromName: "Jane Doe",
 	createdAt: "2026-05-04T05:15:17.000Z",
 };
-const ticketB = {
+const ticketB: Ticket = {
 	id: "tb",
 	subject: "Login broken",
 	status: TicketStatus.OPEN,
@@ -78,9 +102,7 @@ describe("TicketsPage", () => {
 	});
 
 	it("renders one row per ticket once the data resolves", async () => {
-		mockedAxios.get.mockResolvedValueOnce({
-			data: { tickets: [ticketB, ticketA] },
-		});
+		mockedAxios.get.mockResolvedValueOnce(makeResponse([ticketB, ticketA]));
 
 		renderPage();
 
@@ -90,8 +112,8 @@ describe("TicketsPage", () => {
 		expect(screen.getByText("sam@example.com")).toBeInTheDocument();
 	});
 
-	it("calls /api/tickets with credentials, abort signal, and default sort params", async () => {
-		mockedAxios.get.mockResolvedValueOnce({ data: { tickets: [ticketA] } });
+	it("calls /api/tickets with credentials, abort signal, and default sort + pagination params", async () => {
+		mockedAxios.get.mockResolvedValueOnce(makeResponse([ticketA]));
 
 		renderPage();
 		await screen.findByText("Help with billing");
@@ -101,13 +123,18 @@ describe("TicketsPage", () => {
 		expect(url).toBe("/api/tickets");
 		expect(config).toMatchObject({
 			withCredentials: true,
-			params: { sortBy: "createdAt", sortOrder: "desc" },
+			params: {
+				sortBy: "createdAt",
+				sortOrder: "desc",
+				page: 1,
+				pageSize: 10,
+			},
 		});
 		expect(config?.signal).toBeInstanceOf(AbortSignal);
 	});
 
 	it("shows the empty state when the server returns no tickets", async () => {
-		mockedAxios.get.mockResolvedValueOnce({ data: { tickets: [] } });
+		mockedAxios.get.mockResolvedValueOnce(makeResponse([]));
 		renderPage();
 
 		expect(await screen.findByText("No tickets yet.")).toBeInTheDocument();
@@ -128,7 +155,7 @@ describe("TicketsPage", () => {
 
 	it("clicking the Subject header refetches with sortBy=subject, asc", async () => {
 		const user = userEvent.setup();
-		mockedAxios.get.mockResolvedValue({ data: { tickets: [ticketA] } });
+		mockedAxios.get.mockResolvedValue(makeResponse([ticketA]));
 		renderPage();
 		await screen.findByText("Help with billing");
 
@@ -145,7 +172,7 @@ describe("TicketsPage", () => {
 
 	it("clicking the Subject header twice toggles to desc", async () => {
 		const user = userEvent.setup();
-		mockedAxios.get.mockResolvedValue({ data: { tickets: [ticketA] } });
+		mockedAxios.get.mockResolvedValue(makeResponse([ticketA]));
 		renderPage();
 		await screen.findByText("Help with billing");
 
@@ -167,7 +194,7 @@ describe("TicketsPage", () => {
 
 	it("selecting a status from the dropdown sends status=OPEN", async () => {
 		const user = userEvent.setup();
-		mockedAxios.get.mockResolvedValue({ data: { tickets: [ticketA] } });
+		mockedAxios.get.mockResolvedValue(makeResponse([ticketA]));
 		renderPage();
 		await screen.findByText("Help with billing");
 
@@ -189,7 +216,7 @@ describe("TicketsPage", () => {
 
 	it("selecting 'All' clears the status filter", async () => {
 		const user = userEvent.setup();
-		mockedAxios.get.mockResolvedValue({ data: { tickets: [ticketA] } });
+		mockedAxios.get.mockResolvedValue(makeResponse([ticketA]));
 		renderPage();
 		await screen.findByText("Help with billing");
 
@@ -205,7 +232,7 @@ describe("TicketsPage", () => {
 
 	it("category dropdown sends category=GENERAL_QUESTION", async () => {
 		const user = userEvent.setup();
-		mockedAxios.get.mockResolvedValue({ data: { tickets: [ticketA] } });
+		mockedAxios.get.mockResolvedValue(makeResponse([ticketA]));
 		renderPage();
 		await screen.findByText("Help with billing");
 
@@ -223,7 +250,7 @@ describe("TicketsPage", () => {
 
 	it("typing in the search box debounces and sends q=…", async () => {
 		const user = userEvent.setup();
-		mockedAxios.get.mockResolvedValue({ data: { tickets: [ticketA] } });
+		mockedAxios.get.mockResolvedValue(makeResponse([ticketA]));
 		renderPage();
 		await screen.findByText("Help with billing");
 
@@ -239,7 +266,7 @@ describe("TicketsPage", () => {
 
 	it("Clear filters button resets status, category, and search", async () => {
 		const user = userEvent.setup();
-		mockedAxios.get.mockResolvedValue({ data: { tickets: [ticketA] } });
+		mockedAxios.get.mockResolvedValue(makeResponse([ticketA]));
 		renderPage();
 		await screen.findByText("Help with billing");
 
@@ -265,7 +292,7 @@ describe("TicketsPage", () => {
 
 	it("clicking the same header a third time stays sorted (never off)", async () => {
 		const user = userEvent.setup();
-		mockedAxios.get.mockResolvedValue({ data: { tickets: [ticketA] } });
+		mockedAxios.get.mockResolvedValue(makeResponse([ticketA]));
 		renderPage();
 		await screen.findByText("Help with billing");
 
@@ -279,9 +306,112 @@ describe("TicketsPage", () => {
 			expect(params).toMatchObject({ sortBy: "subject" });
 			expect(params.sortOrder).toMatch(/^(asc|desc)$/);
 		});
-		// Specifically: third click flips back to asc.
 		expect(mockedAxios.get.mock.calls.at(-1)?.[1]).toMatchObject({
 			params: { sortBy: "subject", sortOrder: "asc" },
+		});
+	});
+
+	it("renders the 'Showing X–Y of Z' summary based on response totals", async () => {
+		mockedAxios.get.mockResolvedValueOnce(
+			makeResponse([ticketA, ticketB], { total: 103, page: 1, pageSize: 10 }),
+		);
+		renderPage();
+
+		expect(await screen.findByText(/Showing 1–10 of 103/)).toBeInTheDocument();
+		expect(screen.getByText(/Page 1 of 11/)).toBeInTheDocument();
+	});
+
+	it("Next button refetches with page=2", async () => {
+		const user = userEvent.setup();
+		mockedAxios.get.mockResolvedValue(
+			makeResponse([ticketA], { total: 30, page: 1, pageSize: 10 }),
+		);
+		renderPage();
+		await screen.findByText("Help with billing");
+
+		await user.click(screen.getByRole("button", { name: /next page/i }));
+
+		await waitFor(() => {
+			expect(mockedAxios.get.mock.calls.at(-1)?.[1]).toMatchObject({
+				params: { page: 2, pageSize: 10 },
+			});
+		});
+	});
+
+	it("Previous button is disabled on page 1", async () => {
+		mockedAxios.get.mockResolvedValueOnce(
+			makeResponse([ticketA], { total: 30, page: 1, pageSize: 10 }),
+		);
+		renderPage();
+		await screen.findByText("Help with billing");
+
+		expect(
+			screen.getByRole("button", { name: /previous page/i }),
+		).toBeDisabled();
+	});
+
+	it("Next button is disabled on the last page", async () => {
+		const user = userEvent.setup();
+		mockedAxios.get.mockResolvedValue(
+			makeResponse([ticketA], { total: 15, page: 1, pageSize: 10 }),
+		);
+		renderPage();
+		await screen.findByText("Help with billing");
+
+		await user.click(screen.getByRole("button", { name: /next page/i }));
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: /next page/i }),
+			).toBeDisabled();
+		});
+	});
+
+	it("changing page size resets to page 1 and refetches", async () => {
+		const user = userEvent.setup();
+		mockedAxios.get.mockResolvedValue(
+			makeResponse([ticketA], { total: 200, page: 1, pageSize: 10 }),
+		);
+		renderPage();
+		await screen.findByText("Help with billing");
+
+		// First navigate to page 2 so we can verify it resets.
+		await user.click(screen.getByRole("button", { name: /next page/i }));
+		await waitFor(() => {
+			expect(mockedAxios.get.mock.calls.at(-1)?.[1]?.params.page).toBe(2);
+		});
+
+		await user.selectOptions(screen.getByLabelText(/rows per page/i), "50");
+
+		await waitFor(() => {
+			expect(mockedAxios.get.mock.calls.at(-1)?.[1]).toMatchObject({
+				params: { page: 1, pageSize: 50 },
+			});
+		});
+	});
+
+	it("changing the status filter resets to page 1", async () => {
+		const user = userEvent.setup();
+		mockedAxios.get.mockResolvedValue(
+			makeResponse([ticketA], { total: 100, page: 1, pageSize: 10 }),
+		);
+		renderPage();
+		await screen.findByText("Help with billing");
+
+		await user.click(screen.getByRole("button", { name: /next page/i }));
+		await waitFor(() => {
+			expect(mockedAxios.get.mock.calls.at(-1)?.[1]?.params.page).toBe(2);
+		});
+
+		await user.selectOptions(
+			screen.getByLabelText(/filter by status/i),
+			TicketStatus.OPEN,
+		);
+
+		await waitFor(() => {
+			expect(mockedAxios.get.mock.calls.at(-1)?.[1]).toMatchObject({
+				params: { page: 1, status: TicketStatus.OPEN },
+			});
 		});
 	});
 });

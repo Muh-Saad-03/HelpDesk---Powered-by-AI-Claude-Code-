@@ -20,7 +20,8 @@ ticketsRouter.get(
 			res.status(400).json({ error: firstIssueMessage(parsed.error.issues) });
 			return;
 		}
-		const { sortBy, sortOrder, status, category, q } = parsed.data;
+		const { sortBy, sortOrder, status, category, q, page, pageSize } =
+			parsed.data;
 
 		type Where = {
 			status?: { in: typeof status };
@@ -38,19 +39,24 @@ ticketsRouter.get(
 			];
 		}
 
-		const tickets = await prisma.ticket.findMany({
-			where,
-			select: {
-				id: true,
-				subject: true,
-				status: true,
-				category: true,
-				fromEmail: true,
-				fromName: true,
-				createdAt: true,
-			},
-			orderBy: { [sortBy]: sortOrder },
-		});
-		res.json({ tickets });
+		const [tickets, total] = await prisma.$transaction([
+			prisma.ticket.findMany({
+				where,
+				select: {
+					id: true,
+					subject: true,
+					status: true,
+					category: true,
+					fromEmail: true,
+					fromName: true,
+					createdAt: true,
+				},
+				orderBy: { [sortBy]: sortOrder },
+				skip: (page - 1) * pageSize,
+				take: pageSize,
+			}),
+			prisma.ticket.count({ where }),
+		]);
+		res.json({ tickets, total, page, pageSize });
 	},
 );
