@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
+import { type Role } from "core";
 import { useSession } from "../lib/auth-client";
-
-type Role = "ADMIN" | "AGENT";
 
 export function RequireAuth({
   children,

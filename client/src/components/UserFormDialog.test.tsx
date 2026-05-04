@@ -4,6 +4,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { Role } from "core";
 import axios from "axios";
 import { renderWithQuery } from "../test/renderWithQuery";
 import { UserFormDialog } from "./UserFormDialog";
@@ -96,7 +97,7 @@ describe("UserFormDialog — create mode", () => {
 					id: "u-new",
 					name: "Jane Doe",
 					email: "jane@example.com",
-					role: "AGENT",
+					role: Role.AGENT,
 					createdAt: "2026-05-03T00:00:00.000Z",
 				},
 			},
@@ -215,7 +216,7 @@ describe("UserFormDialog — edit mode", () => {
 
 	it("PATCHes /api/users/:id with empty password when none is typed", async () => {
 		mockedAxios.patch.mockResolvedValueOnce({
-			data: { user: { ...editTarget, role: "AGENT", createdAt: "x" } },
+			data: { user: { ...editTarget, role: Role.AGENT, createdAt: "x" } },
 		});
 
 		const user = userEvent.setup();
@@ -243,7 +244,7 @@ describe("UserFormDialog — edit mode", () => {
 
 	it("PATCHes with the new password when the admin types one", async () => {
 		mockedAxios.patch.mockResolvedValueOnce({
-			data: { user: { ...editTarget, role: "AGENT", createdAt: "x" } },
+			data: { user: { ...editTarget, role: Role.AGENT, createdAt: "x" } },
 		});
 
 		const user = userEvent.setup();

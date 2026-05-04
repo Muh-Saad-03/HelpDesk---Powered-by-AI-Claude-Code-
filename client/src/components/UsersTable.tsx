@@ -1,6 +1,7 @@
 /** @format */
 
-import { PencilIcon } from "lucide-react";
+import { PencilIcon, TrashIcon } from "lucide-react";
+import { Role } from "core";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -8,13 +9,14 @@ export type User = {
 	id: string;
 	name: string;
 	email: string;
-	role: "ADMIN" | "AGENT";
+	role: Role;
 	createdAt: string;
 };
 
 type Props = {
 	users: User[] | undefined;
 	onEdit?: (user: User) => void;
+	onDelete?: (user: User) => void;
 };
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -23,7 +25,7 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 
 const SKELETON_ROW_COUNT = 5;
 
-export function UsersTable({ users, onEdit }: Props) {
+export function UsersTable({ users, onEdit, onDelete }: Props) {
 	const isLoading = users === undefined;
 
 	return (
@@ -71,7 +73,7 @@ export function UsersTable({ users, onEdit }: Props) {
 										<span
 											className={
 												"inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium " +
-												(u.role === "ADMIN"
+												(u.role === Role.ADMIN
 													? "bg-primary/10 text-primary"
 													: "bg-muted text-muted-foreground")
 											}>
@@ -81,14 +83,25 @@ export function UsersTable({ users, onEdit }: Props) {
 									<td className='px-4 py-2'>
 										{dateFormatter.format(new Date(u.createdAt))}
 									</td>
-									<td className='px-4 py-2 text-right'>
-										<Button
-											variant='ghost'
-											size='icon-sm'
-											aria-label={`Edit ${u.name}`}
-											onClick={() => onEdit?.(u)}>
-											<PencilIcon />
-										</Button>
+									<td className='px-4 py-2'>
+										<div className='flex items-center justify-end gap-1'>
+											<Button
+												variant='ghost'
+												size='icon-sm'
+												aria-label={`Edit ${u.name}`}
+												onClick={() => onEdit?.(u)}>
+												<PencilIcon />
+											</Button>
+											{u.role !== Role.ADMIN && (
+												<Button
+													variant='ghost'
+													size='icon-sm'
+													aria-label={`Delete ${u.name}`}
+													onClick={() => onDelete?.(u)}>
+													<TrashIcon />
+												</Button>
+											)}
+										</div>
 									</td>
 								</tr>
 							))}

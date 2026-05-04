@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { Role } from "core";
 import { LoginPage } from "./pages/LoginPage";
 import { Home } from "./pages/Home";
 import { UsersPage } from "./pages/UsersPage";
@@ -20,7 +21,7 @@ export function App() {
         <Route
           path="/users"
           element={
-            <RequireAuth role="ADMIN">
+            <RequireAuth role={Role.ADMIN}>
               <UsersPage />
             </RequireAuth>
           }

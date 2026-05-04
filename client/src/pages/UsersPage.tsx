@@ -5,6 +5,7 @@ import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import { PlusIcon } from "lucide-react";
 import { NavBar } from "../components/NavBar";
+import { ConfirmDeleteUserDialog } from "../components/ConfirmDeleteUserDialog";
 import {
 	UserFormDialog,
 	type UserFormDialogState,
@@ -15,8 +16,10 @@ import { Button } from "@/components/ui/button";
 
 type UsersResponse = { users: User[] };
 
+type PageDialog = UserFormDialogState | { mode: "delete"; user: User };
+
 export function UsersPage() {
-	const [dialog, setDialog] = useState<UserFormDialogState>(null);
+	const [dialog, setDialog] = useState<PageDialog>(null);
 	const {
 		data: users,
 		isPending,
@@ -59,11 +62,20 @@ export function UsersPage() {
 					<UsersTable
 						users={users}
 						onEdit={(user) => setDialog({ mode: "edit", user })}
+						onDelete={(user) => setDialog({ mode: "delete", user })}
 					/>
 				)}
 
 				<UserFormDialog
-					state={dialog}
+					state={
+						dialog?.mode === "create" || dialog?.mode === "edit"
+							? dialog
+							: null
+					}
+					onClose={() => setDialog(null)}
+				/>
+				<ConfirmDeleteUserDialog
+					user={dialog?.mode === "delete" ? dialog.user : null}
 					onClose={() => setDialog(null)}
 				/>
 			</main>

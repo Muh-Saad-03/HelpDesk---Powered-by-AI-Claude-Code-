@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
+import { Role } from "core";
 import axios from "axios";
 import { renderWithQuery } from "../test/renderWithQuery";
 import { UsersPage } from "./UsersPage";
@@ -13,7 +14,7 @@ vi.mock("@/lib/auth-client", () => ({
   authClient: { signOut: vi.fn() },
   useSession: () => ({
     data: {
-      user: { id: "u-admin", name: "Test Admin", email: "admin@test.local", role: "ADMIN" },
+      user: { id: "u-admin", name: "Test Admin", email: "admin@test.local", role: Role.ADMIN },
     },
     isPending: false,
   }),
@@ -33,14 +34,14 @@ const adminUser = {
   id: "u1",
   name: "Ada Admin",
   email: "ada@example.com",
-  role: "ADMIN" as const,
+  role: Role.ADMIN,
   createdAt: "2026-01-15T12:00:00.000Z",
 };
 const agentUser = {
   id: "u2",
   name: "Gus Agent",
   email: "gus@example.com",
-  role: "AGENT" as const,
+  role: Role.AGENT,
   createdAt: "2026-02-20T08:30:00.000Z",
 };
 
@@ -210,7 +211,7 @@ describe("UsersPage — edit-user dialog", () => {
       id: "u-ada",
       name: "Ada Admin",
       email: "ada@example.com",
-      role: "ADMIN" as const,
+      role: Role.ADMIN,
       createdAt: "2026-01-15T12:00:00.000Z",
     };
     mockedAxios.get.mockResolvedValueOnce({ data: { users: [adaUser] } });
@@ -237,5 +238,64 @@ describe("UsersPage — edit-user dialog", () => {
     expect(
       screen.getByRole("button", { name: /^save changes$/i }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("UsersPage — delete-user button visibility", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renders a Delete button for AGENT rows but not ADMIN rows", async () => {
+    mockedAxios.get.mockResolvedValueOnce({
+      data: { users: [adminUser, agentUser] },
+    });
+
+    renderPage();
+
+    const adminRow = (await screen.findByText("Ada Admin")).closest("tr");
+    const agentRow = screen.getByText("Gus Agent").closest("tr");
+    expect(adminRow).not.toBeNull();
+    expect(agentRow).not.toBeNull();
+
+    expect(
+      within(agentRow as HTMLElement).getByRole("button", {
+        name: /delete gus agent/i,
+      }),
+    ).toBeInTheDocument();
+
+    expect(
+      within(adminRow as HTMLElement).queryByRole("button", {
+        name: /delete ada admin/i,
+      }),
+    ).not.toBeInTheDocument();
+  });
+});
+
+describe("UsersPage — delete-user dialog", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("opens the confirm dialog naming the agent when their Delete button is clicked", async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: { users: [agentUser] } });
+
+    const user = userEvent.setup();
+    renderPage();
+
+    await screen.findByText("Gus Agent");
+
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: /delete gus agent/i }),
+    );
+
+    const dialog = await screen.findByRole("alertdialog");
+    expect(
+      within(dialog).getByRole("heading", { name: /delete user\?/i }),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByText(/Gus Agent/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/gus@example\.com/)).toBeInTheDocument();
   });
 });
