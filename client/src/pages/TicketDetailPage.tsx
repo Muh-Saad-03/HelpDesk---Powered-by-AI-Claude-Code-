@@ -4,35 +4,16 @@ import axios, { AxiosError } from "axios";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
-import { TicketCategory, TicketStatus } from "core";
-import { AssigneeSelect } from "../components/AssigneeSelect";
-import { CategorySelect } from "../components/CategorySelect";
+import type { Ticket } from "core";
 import { NavBar } from "../components/NavBar";
-import { StatusSelect } from "../components/StatusSelect";
+import { TicketDetail } from "../components/TicketDetail";
+import { TicketReplies } from "../components/TicketReplies";
+import { UpdateTicket } from "../components/UpdateTicket";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link } from "@/components/ui/link";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type TicketDetail = {
-	id: string;
-	subject: string;
-	body: string;
-	status: TicketStatus;
-	category: TicketCategory | null;
-	fromEmail: string;
-	fromName: string | null;
-	assigneeId: string | null;
-	assignee: { id: string; name: string; email: string } | null;
-	createdAt: string;
-	updatedAt: string;
-};
-
-type TicketResponse = { ticket: TicketDetail };
-
-const dateFormatter = new Intl.DateTimeFormat(undefined, {
-	dateStyle: "medium",
-	timeStyle: "short",
-});
+type TicketResponse = { ticket: Ticket };
 
 export function TicketDetailPage() {
 	const { id } = useParams<{ id: string }>();
@@ -82,76 +63,13 @@ export function TicketDetailPage() {
 					</Alert>
 				) : (
 					<article>
-						<header className='mb-6'>
-							<h1 className='text-2xl font-semibold tracking-tight'>
-								{data.subject}
-							</h1>
-						</header>
-
 						<div className='grid grid-cols-1 gap-8 lg:grid-cols-[1fr_120px]'>
 							<div>
-								<dl className='mb-6 space-y-2 text-sm'>
-									<div className='flex flex-wrap gap-x-2'>
-										<dt className='text-muted-foreground'>From:</dt>
-										<dd>
-											{data.fromName ? (
-												<>
-													<span>{data.fromName}</span>{" "}
-													<span className='text-muted-foreground'>
-														&lt;{data.fromEmail}&gt;
-													</span>
-												</>
-											) : (
-												data.fromEmail
-											)}
-										</dd>
-									</div>
-
-									<div className='flex flex-wrap gap-x-2'>
-										<dt className='text-muted-foreground'>Created:</dt>
-										<dd>{dateFormatter.format(new Date(data.createdAt))}</dd>
-									</div>
-
-									<div className='flex flex-wrap gap-x-2'>
-										<dt className='text-muted-foreground'>Updated:</dt>
-										<dd>{dateFormatter.format(new Date(data.updatedAt))}</dd>
-									</div>
-								</dl>
-
-								<section className='rounded-lg border bg-card p-4 text-sm'>
-									<h2 className='mb-3 text-xs font-medium text-muted-foreground'>
-										Message
-									</h2>
-									<div className='mb-3 font-medium'>
-										{data.fromName ?? data.fromEmail}
-									</div>
-									<div className='whitespace-pre-wrap'>{data.body}</div>
-								</section>
+								<TicketDetail ticket={data} />
+								<TicketReplies ticket={data} />
 							</div>
 
-							<aside className='space-y-4 text-sm'>
-								<div>
-									<div className='mb-1 text-xs text-muted-foreground'>Status</div>
-									<StatusSelect
-										ticketId={data.id}
-										currentStatus={data.status}
-									/>
-								</div>
-								<div>
-									<div className='mb-1 text-xs text-muted-foreground'>Category</div>
-									<CategorySelect
-										ticketId={data.id}
-										currentCategory={data.category}
-									/>
-								</div>
-								<div>
-									<div className='mb-1 text-xs text-muted-foreground'>Assignee</div>
-									<AssigneeSelect
-										ticketId={data.id}
-										currentAssigneeId={data.assigneeId}
-									/>
-								</div>
-							</aside>
+							<UpdateTicket ticket={data} />
 						</div>
 					</article>
 				)}

@@ -2,11 +2,11 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { TicketCategory, TicketStatus } from "core";
-import { TicketsTable, type Ticket } from "./TicketsTable";
+import { TicketsTable, type TicketRow } from "./TicketsTable";
 
 const defaultSorting = [{ id: "createdAt", desc: true }];
 const noopSortingChange = vi.fn();
-function renderTable(tickets: Ticket[] | undefined) {
+function renderTable(tickets: TicketRow[] | undefined) {
 	return render(
 		<MemoryRouter>
 			<TicketsTable
@@ -18,7 +18,7 @@ function renderTable(tickets: Ticket[] | undefined) {
 	);
 }
 
-const baseTicket: Ticket = {
+const baseTicket: TicketRow = {
 	id: "t1",
 	subject: "Help with billing",
 	status: TicketStatus.OPEN,
@@ -40,8 +40,8 @@ describe("TicketsTable", () => {
 	});
 
 	it("renders rows in the order they are passed (server controls sort)", () => {
-		const newer: Ticket = { ...baseTicket, id: "newer", subject: "Newer one" };
-		const older: Ticket = { ...baseTicket, id: "older", subject: "Older one" };
+		const newer: TicketRow = { ...baseTicket, id: "newer", subject: "Newer one" };
+		const older: TicketRow = { ...baseTicket, id: "older", subject: "Older one" };
 
 		renderTable([newer, older]);
 
@@ -64,7 +64,7 @@ describe("TicketsTable", () => {
 	});
 
 	it("shows only the email when fromName is null", () => {
-		const anon: Ticket = { ...baseTicket, fromName: null };
+		const anon: TicketRow = { ...baseTicket, fromName: null };
 		renderTable([anon]);
 
 		const row = screen.getByText("Help with billing").closest("tr");
@@ -77,25 +77,25 @@ describe("TicketsTable", () => {
 	});
 
 	it("renders the friendly category label, or an em dash when null", () => {
-		const general: Ticket = {
+		const general: TicketRow = {
 			...baseTicket,
 			id: "g",
 			subject: "General q",
 			category: TicketCategory.GENERAL_QUESTION,
 		};
-		const technical: Ticket = {
+		const technical: TicketRow = {
 			...baseTicket,
 			id: "t",
 			subject: "Tech q",
 			category: TicketCategory.TECHNICAL_QUESTION,
 		};
-		const refund: Ticket = {
+		const refund: TicketRow = {
 			...baseTicket,
 			id: "r",
 			subject: "Refund q",
 			category: TicketCategory.REFUND_REQUEST,
 		};
-		const uncategorized: Ticket = {
+		const uncategorized: TicketRow = {
 			...baseTicket,
 			id: "u",
 			subject: "Uncategorized",
@@ -126,14 +126,14 @@ describe("TicketsTable", () => {
 	});
 
 	it("renders the status pill with the lowercase status text", () => {
-		const open: Ticket = { ...baseTicket, id: "o", subject: "Open one", status: TicketStatus.OPEN };
-		const resolved: Ticket = {
+		const open: TicketRow = { ...baseTicket, id: "o", subject: "Open one", status: TicketStatus.OPEN };
+		const resolved: TicketRow = {
 			...baseTicket,
 			id: "rs",
 			subject: "Resolved one",
 			status: TicketStatus.RESOLVED,
 		};
-		const closed: Ticket = {
+		const closed: TicketRow = {
 			...baseTicket,
 			id: "cl",
 			subject: "Closed one",

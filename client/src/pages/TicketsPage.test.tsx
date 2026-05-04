@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { Role, TicketCategory, TicketStatus } from "core";
+import { Role, TicketCategory, TicketStatus, type Ticket } from "core";
 import axios from "axios";
 import { renderWithQuery } from "../test/renderWithQuery";
 import { TicketsPage } from "./TicketsPage";
@@ -35,18 +35,19 @@ function renderPage() {
 	);
 }
 
-type Ticket = {
-	id: string;
-	subject: string;
-	status: TicketStatus;
-	category: TicketCategory | null;
-	fromEmail: string;
-	fromName: string | null;
-	createdAt: string;
-};
+type TicketRow = Pick<
+	Ticket,
+	| "id"
+	| "subject"
+	| "status"
+	| "category"
+	| "fromEmail"
+	| "fromName"
+	| "createdAt"
+>;
 
 function makeResponse(
-	tickets: Ticket[],
+	tickets: TicketRow[],
 	opts: { total?: number; page?: number; pageSize?: number } = {},
 ) {
 	return {
@@ -59,7 +60,7 @@ function makeResponse(
 	};
 }
 
-const ticketA: Ticket = {
+const ticketA: TicketRow = {
 	id: "ta",
 	subject: "Help with billing",
 	status: TicketStatus.OPEN,
@@ -68,7 +69,7 @@ const ticketA: Ticket = {
 	fromName: "Jane Doe",
 	createdAt: "2026-05-04T05:15:17.000Z",
 };
-const ticketB: Ticket = {
+const ticketB: TicketRow = {
 	id: "tb",
 	subject: "Login broken",
 	status: TicketStatus.OPEN,

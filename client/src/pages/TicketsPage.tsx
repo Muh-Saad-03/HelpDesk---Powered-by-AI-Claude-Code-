@@ -14,14 +14,14 @@ import {
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { NavBar } from "../components/NavBar";
 import { CATEGORY_OPTIONS, STATUS_OPTIONS } from "../components/ticket-fields";
-import { TicketsTable, type Ticket } from "../components/TicketsTable";
+import { TicketsTable, type TicketRow } from "../components/TicketsTable";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SELECT_CLASS } from "@/lib/utils";
 
 type TicketsResponse = {
-	tickets: Ticket[];
+	tickets: TicketRow[];
 	total: number;
 	page: number;
 	pageSize: number;

@@ -1,9 +1,24 @@
 /** @format */
 
 import { Router, type Request, type Response } from "express";
-import { Role, ticketsListQuerySchema, updateTicketSchema } from "core";
+import {
+	createReplySchema,
+	Role,
+	SenderType,
+	ticketsListQuerySchema,
+	updateTicketSchema,
+} from "core";
 import { prisma } from "../db.ts";
 import { requireRole } from "../middleware/requireRole.ts";
+
+const REPLY_SELECT = {
+	id: true,
+	body: true,
+	createdAt: true,
+	senderType: true,
+	authorId: true,
+	author: { select: { id: true, name: true, email: true } },
+} as const;
 
 const TICKET_DETAIL_SELECT = {
 	id: true,
@@ -142,5 +157,59 @@ ticketsRouter.patch(
 			select: TICKET_DETAIL_SELECT,
 		});
 		res.json({ ticket: updated });
+	},
+);
+
+ticketsRouter.get(
+	"/:id/replies",
+	requireRole(Role.ADMIN, Role.AGENT),
+	async (req: Request<{ id: string }>, res: Response) => {
+		const ticket = await prisma.ticket.findUnique({
+			where: { id: req.params.id },
+			select: { id: true },
+		});
+		if (!ticket) {
+			res.status(404).json({ error: "Ticket not found" });
+			return;
+		}
+		const replies = await prisma.reply.findMany({
+			where: { ticketId: req.params.id },
+			orderBy: { createdAt: "asc" },
+			select: REPLY_SELECT,
+		});
+		res.json({ replies });
+	},
+);
+
+ticketsRouter.post(
+	"/:id/replies",
+	requireRole(Role.ADMIN, Role.AGENT),
+	async (req: Request<{ id: string }>, res: Response) => {
+		const parsed = createReplySchema.safeParse(req.body);
+		if (!parsed.success) {
+			res.status(400).json({ error: firstIssueMessage(parsed.error.issues) });
+			return;
+		}
+
+		const ticket = await prisma.ticket.findUnique({
+			where: { id: req.params.id },
+			select: { id: true },
+		});
+		if (!ticket) {
+			res.status(404).json({ error: "Ticket not found" });
+			return;
+		}
+
+		const authorId = req.session!.user.id;
+		const reply = await prisma.reply.create({
+			data: {
+				ticketId: req.params.id,
+				senderType: SenderType.AGENT,
+				authorId,
+				body: parsed.data.body,
+			},
+			select: REPLY_SELECT,
+		});
+		res.status(201).json({ reply });
 	},
 );

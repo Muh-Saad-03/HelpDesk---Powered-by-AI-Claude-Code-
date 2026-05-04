@@ -1,6 +1,6 @@
 /** @format */
 
-import { TicketCategory, TicketStatus } from "core";
+import type { Ticket } from "core";
 import {
 	createColumnHelper,
 	flexRender,
@@ -14,18 +14,22 @@ import { Link } from "@/components/ui/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CATEGORY_LABELS, StatusPill } from "./ticket-fields";
 
-export type Ticket = {
-	id: string;
-	subject: string;
-	status: TicketStatus;
-	category: TicketCategory | null;
-	fromEmail: string;
-	fromName: string | null;
-	createdAt: string;
-};
+// The list endpoint returns a strict subset of the full Ticket — no body,
+// assignee, or updatedAt. Derive the row shape so it stays in sync with
+// the canonical type in core.
+export type TicketRow = Pick<
+	Ticket,
+	| "id"
+	| "subject"
+	| "status"
+	| "category"
+	| "fromEmail"
+	| "fromName"
+	| "createdAt"
+>;
 
 type Props = {
-	tickets: Ticket[] | undefined;
+	tickets: TicketRow[] | undefined;
 	sorting: SortingState;
 	onSortingChange: OnChangeFn<SortingState>;
 };
@@ -37,7 +41,7 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 
 const SKELETON_ROW_COUNT = 5;
 
-const columnHelper = createColumnHelper<Ticket>();
+const columnHelper = createColumnHelper<TicketRow>();
 
 const columns = [
 	columnHelper.accessor("subject", {

@@ -64,6 +64,9 @@ function mockGetByUrl(
 		if (url === "/api/users/assignable") {
 			return { data: { users: assignableUsers } };
 		}
+		if (url.endsWith("/replies")) {
+			return { data: { replies: [] } };
+		}
 		if (url.startsWith("/api/tickets/")) {
 			if ("error" in ticketResponse) throw ticketResponse.error;
 			return ticketResponse;
