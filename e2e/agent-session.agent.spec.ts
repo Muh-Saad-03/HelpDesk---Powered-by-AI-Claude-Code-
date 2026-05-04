@@ -29,7 +29,7 @@ test.describe("Agent session", () => {
     const nav = page.getByRole("navigation");
     await expect(nav.getByRole("link", { name: "Helpdesk" })).toBeVisible();
     await expect(
-      nav.getByText(`${AGENT_USER.name} (role: agent)`),
+      nav.getByText(AGENT_USER.name),
     ).toBeVisible();
     await expect(
       nav.getByRole("button", { name: /sign out/i }),
@@ -66,7 +66,7 @@ test.describe("Agent session", () => {
     await expect(
       page
         .getByRole("navigation")
-        .getByText(`${AGENT_USER.name} (role: agent)`),
+        .getByText(AGENT_USER.name),
     ).toBeVisible();
   });
 

@@ -47,7 +47,7 @@ test.describe("Login page", () => {
         await expect(nav.getByRole("link", { name: "Helpdesk" })).toBeVisible();
         await expect(nav.getByRole("link", { name: "Users" })).toBeVisible();
         await expect(
-          nav.getByText(`${ADMIN_USER.name} (role: admin)`),
+          nav.getByText(ADMIN_USER.name),
         ).toBeVisible();
         await expect(
           nav.getByRole("button", { name: /sign out/i }),
@@ -69,7 +69,7 @@ test.describe("Login page", () => {
 
       const nav = page.getByRole("navigation");
       await expect(
-        nav.getByText(`${AGENT_USER.name} (role: agent)`),
+        nav.getByText(AGENT_USER.name),
       ).toBeVisible();
       // Agent must NOT see the admin-only "Users" link.
       await expect(nav.getByRole("link", { name: "Users" })).toHaveCount(0);

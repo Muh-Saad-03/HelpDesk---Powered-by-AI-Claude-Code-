@@ -9,8 +9,7 @@ import cors from "cors";
 import { toNodeHandler } from "better-auth/node";
 import { prisma } from "./db.ts";
 import { auth } from "./auth.ts";
-import { requireRole } from "./middleware/requireRole.ts";
-import { Role } from "./generated/prisma/client.ts";
+import { usersRouter } from "./routes/users.ts";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
@@ -31,40 +30,19 @@ app.get("/api/health", (_req: Request, res: Response) => {
 	res.json({ status: "ok", uptime: process.uptime() });
 });
 
-app.get(
-	"/api/db/health",
-	async (_req: Request, res: Response, next: NextFunction) => {
-		try {
-			const rows = await prisma.$queryRaw<{ now: Date }[]>`SELECT NOW() as now`;
-			res.json({ status: "ok", now: rows[0]?.now });
-		} catch (err) {
-			next(err);
-		}
-	},
-);
+app.get("/api/db/health", async (_req: Request, res: Response) => {
+	const rows = await prisma.$queryRaw<{ now: Date }[]>`SELECT NOW() as now`;
+	res.json({ status: "ok", now: rows[0]?.now });
+});
 
-app.get(
-	"/api/users",
-	requireRole(Role.ADMIN),
-	async (_req: Request, res: Response) => {
-		const users = await prisma.user.findMany({
-			select: {
-				id: true,
-				name: true,
-				email: true,
-				role: true,
-				createdAt: true,
-			},
-			orderBy: { createdAt: "asc" },
-		});
-		res.json({ users });
-	},
-);
+app.use("/api/users", usersRouter);
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 	console.error(err);
 	const isDev = process.env.NODE_ENV !== "production";
-	res.status(500).json({ error: isDev ? err.message : "Internal server error" });
+	res
+		.status(500)
+		.json({ error: isDev ? err.message : "Internal server error" });
 });
 
 app.listen(PORT, () => {

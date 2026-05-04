@@ -6,7 +6,7 @@ AI-powered ticket management system. See `project-scope.md` for product scope an
 
 - **Runtime / package manager**: Bun (workspaces) — not Node, despite what `tech-stack.md` says.
 - **Frontend** (`/client`): React 19 + TypeScript, Vite 7 (dev server on :5173), Tailwind v4, shadcn/ui 3.x (`base-nova` preset, `neutral` baseColor, lucide icons), react-router-dom 7, react-hook-form + zod for forms, **axios** for HTTP, **TanStack Query** (`@tanstack/react-query`) for server state.
-- **Backend** (`/server`): Express 5 + TypeScript on Bun, listens on :3001 (run via `bun --watch src/index.ts`). ESM only. CORS allows the Vite origin with credentials.
+- **Backend** (`/server`): Express 5 + TypeScript on Bun, listens on :3001 (run via `bun --watch src/index.ts`). ESM only. CORS allows the Vite origin with credentials. **zod** for request body validation.
 - **Database**: PostgreSQL 18 (local), Prisma 7 ORM (`prisma-client` provider + `@prisma/adapter-pg`).
 - **Auth**: Better Auth 1.6 — server (`server/src/auth.ts`) + `better-auth/react` on the client (`client/src/lib/auth-client.ts`). Email/password only, signup disabled, sessions stored in Postgres. See **Authentication** section below.
 - **AI**: Claude API — _planned, not yet wired_. No `@anthropic-ai/sdk` dependency yet.
@@ -38,6 +38,7 @@ AI-powered ticket management system. See `project-scope.md` for product scope an
 ## Layout
 
 ```
+core/     Bun workspace — shared TS code consumed by both client and server (zod schemas, shared types)
 client/   React + TS + Vite — dev server on :5173, proxies /api/* to :3001
 server/   Express + TS on Bun — listens on :3001
 e2e/      Playwright tests + global setup; root-level (not a workspace)
@@ -53,6 +54,8 @@ bun run dev:client     # client only (http://localhost:5173)
 bun run build          # build both packages
 bun --filter server typecheck
 bun --filter client typecheck
+bun --filter client test           # component tests (single run)
+bun --filter client test:watch     # component tests in watch mode (for writing)
 ```
 
 ## Key conventions
@@ -64,10 +67,32 @@ bun --filter client typecheck
 - **Client → server calls**: use relative paths (`/api/...`) so Vite's dev proxy handles them; never hardcode `http://localhost:3001`. Use **axios** for the request and wrap reads in **TanStack Query** (`useQuery` / `useMutation`) — don't reach for raw `fetch` or hand-rolled `useEffect` + `useState` data plumbing. Pass the `signal` from the `queryFn` argument into axios so cancellation works on unmount. The `QueryClientProvider` is already mounted in `client/src/main.tsx`.
 - **TypeScript**: strict mode everywhere. Prefer `type` imports for types-only symbols.
 - **New endpoints**: prefix with `/api/`, return JSON, surface errors through Express's error middleware (4-arg signature) — don't swallow them in handlers.
+- **No try/catch in async handlers**: Express 5 auto-forwards rejected promises to the error middleware, so async handlers should let exceptions bubble. Don't wrap handler bodies in `try { ... } catch (err) { next(err) }` — it's pure noise. Only catch when you genuinely need to recover or transform the error.
+- **Request validation**: validate every request body / query / params with **zod** (`safeParse`). On failure, respond `400` with the first issue's message — don't hand-roll `typeof` checks. Define the schema near the handler (or shared if reused) so the inferred type drives the handler logic.
+- **Client forms**: build every form with **react-hook-form + zod** (`zodResolver` from `@hookform/resolvers/zod`). Wrap each input in `<Controller>` rendering shadcn `Field` + `FieldLabel` + `FieldError` — no raw `useState` per input, no shadcn `Form` component. See `LoginPage.tsx` and `CreateUserDialog.tsx` for the canonical pattern.
+- **Shared zod schemas live in `core/`**: any zod schema used by both the client form and the matching server endpoint must be defined once in the `core` workspace (`core/src/schemas/<resource>.ts`) and imported as `import { fooSchema } from "core"` from both sides. Don't duplicate the schema — duplicates drift, error messages diverge, and the form/server contract silently breaks. The `core` package is a Bun workspace listed alongside `client` and `server` and exports plain TS via its `exports` field; both consumers depend on it as `"core": "workspace:*"`. Example: `createUserSchema` in `core/src/schemas/user.ts` is consumed by `client/src/components/CreateUserDialog.tsx` and `server/src/routes/users.ts`.
 - **Env vars**: read via `process.env.X` with a sensible default; document in `server/.env.example`.
 - **No new files unless needed**: edit existing files in place; don't add docs (`*.md`) unless asked.
 
-## Writing tests — use `playwright-e2e-author`
+## Testing
+
+There are **two** test surfaces in this repo. Pick the right one for the task — don't write component tests in `e2e/` or e2e tests under `client/src/`.
+
+### Component tests (Vitest + React Testing Library)
+
+For testing a single React component or page in isolation: rendered output, role/text queries, mocked hooks, mocked HTTP.
+
+- **Stack**: Vitest 4 + jsdom + `@testing-library/react` 16 + `@testing-library/jest-dom` matchers + `@testing-library/user-event`. Configured via the `test` block in `client/vite.config.ts`.
+- **Setup file**: `client/src/test/setup.ts` — loads jest-dom matchers and runs `cleanup()` after each test. Don't duplicate this in individual specs.
+- **Location**: colocate as `*.test.tsx` next to the component (e.g. `client/src/pages/UsersPage.test.tsx`).
+- **Render helper**: use `renderWithQuery` from `client/src/test/renderWithQuery.tsx` to wrap UI in a fresh `QueryClient` (with `retry: false` so failure-path tests don't retry 3×). Compose with `<MemoryRouter>` at the call site if the component uses react-router.
+- **Mocking patterns**:
+  - HTTP: `vi.mock("axios")` then `vi.mocked(axios, true).get.mockResolvedValueOnce(...)`. Cover loading, success, empty, and error paths.
+  - Auth/session: `vi.mock("@/lib/auth-client", () => ({ ... }))` with a fake `useSession` returning the role you need — required when rendering anything that includes `<NavBar>`.
+- **Run**: `bun --filter client test` (single run, CI-safe) or `bun --filter client test:watch` (watch mode while writing).
+- Component tests are fine to author directly — no subagent needed.
+
+### End-to-end tests — use `playwright-e2e-author`
 
 When the user asks to write, scaffold, or extend Playwright end-to-end tests (new specs, regression tests for bug fixes, page object models, auth/role flow coverage, etc.), delegate to the **`playwright-e2e-author`** subagent via the Agent tool. That agent owns the operational details of the test environment (test DB, env loading, global setup/seed, storage state for auth) and is configured to extend the existing setup rather than rebuild it.
 
