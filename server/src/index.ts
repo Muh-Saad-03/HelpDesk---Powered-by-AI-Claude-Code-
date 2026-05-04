@@ -9,6 +9,8 @@ import cors from "cors";
 import { toNodeHandler } from "better-auth/node";
 import { prisma } from "./db.ts";
 import { auth } from "./auth.ts";
+import { requireRole } from "./middleware/requireRole.ts";
+import { Role } from "./generated/prisma/client.ts";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
@@ -38,6 +40,24 @@ app.get(
 		} catch (err) {
 			next(err);
 		}
+	},
+);
+
+app.get(
+	"/api/users",
+	requireRole(Role.ADMIN),
+	async (_req: Request, res: Response) => {
+		const users = await prisma.user.findMany({
+			select: {
+				id: true,
+				name: true,
+				email: true,
+				role: true,
+				createdAt: true,
+			},
+			orderBy: { createdAt: "asc" },
+		});
+		res.json({ users });
 	},
 );
 
