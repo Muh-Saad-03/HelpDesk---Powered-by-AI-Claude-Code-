@@ -188,6 +188,10 @@ usersRouter.delete(
 					email: sentinelEmail,
 				},
 			}),
+			prisma.ticket.updateMany({
+				where: { assigneeId: id },
+				data: { assigneeId: null },
+			}),
 			prisma.session.deleteMany({ where: { userId: id } }),
 			prisma.account.updateMany({
 				where: { userId: id, providerId: "credential" },
