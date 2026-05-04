@@ -4,6 +4,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { Home } from "./pages/Home";
 import { UsersPage } from "./pages/UsersPage";
 import { TicketsPage } from "./pages/TicketsPage";
+import { TicketDetailPage } from "./pages/TicketDetailPage";
 import { RequireAuth } from "./components/RequireAuth";
 
 export function App() {
@@ -32,6 +33,14 @@ export function App() {
           element={
             <RequireAuth>
               <TicketsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/tickets/:id"
+          element={
+            <RequireAuth>
+              <TicketDetailPage />
             </RequireAuth>
           }
         />

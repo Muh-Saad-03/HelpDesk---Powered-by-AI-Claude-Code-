@@ -60,3 +60,31 @@ ticketsRouter.get(
 		res.json({ tickets, total, page, pageSize });
 	},
 );
+
+ticketsRouter.get(
+	"/:id",
+	requireRole(Role.ADMIN, Role.AGENT),
+	async (req: Request<{ id: string }>, res: Response) => {
+		const ticket = await prisma.ticket.findUnique({
+			where: { id: req.params.id },
+			select: {
+				id: true,
+				subject: true,
+				body: true,
+				status: true,
+				category: true,
+				fromEmail: true,
+				fromName: true,
+				assigneeId: true,
+				assignee: { select: { id: true, name: true, email: true } },
+				createdAt: true,
+				updatedAt: true,
+			},
+		});
+		if (!ticket) {
+			res.status(404).json({ error: "Ticket not found" });
+			return;
+		}
+		res.json({ ticket });
+	},
+);

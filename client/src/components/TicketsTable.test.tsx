@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { TicketCategory, TicketStatus } from "core";
 import { TicketsTable, type Ticket } from "./TicketsTable";
 
@@ -7,11 +8,13 @@ const defaultSorting = [{ id: "createdAt", desc: true }];
 const noopSortingChange = vi.fn();
 function renderTable(tickets: Ticket[] | undefined) {
 	return render(
-		<TicketsTable
-			tickets={tickets}
-			sorting={defaultSorting}
-			onSortingChange={noopSortingChange}
-		/>,
+		<MemoryRouter>
+			<TicketsTable
+				tickets={tickets}
+				sorting={defaultSorting}
+				onSortingChange={noopSortingChange}
+			/>
+		</MemoryRouter>,
 	);
 }
 
@@ -113,6 +116,13 @@ describe("TicketsTable", () => {
 		expect(
 			within(screen.getByText("Uncategorized").closest("tr") as HTMLElement).getByText("—"),
 		).toBeInTheDocument();
+	});
+
+	it("renders the subject as a link to the ticket detail page", () => {
+		renderTable([baseTicket]);
+
+		const link = screen.getByRole("link", { name: "Help with billing" });
+		expect(link).toHaveAttribute("href", "/tickets/t1");
 	});
 
 	it("renders the status pill with the lowercase status text", () => {

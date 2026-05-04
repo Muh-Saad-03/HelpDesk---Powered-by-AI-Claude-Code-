@@ -10,7 +10,9 @@ import {
 	type SortingState,
 } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp } from "lucide-react";
+import { Link } from "@/components/ui/link";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CATEGORY_LABELS, StatusPill } from "./ticket-fields";
 
 export type Ticket = {
 	id: string;
@@ -35,27 +37,17 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 
 const SKELETON_ROW_COUNT = 5;
 
-const STATUS_CLASSES: Record<TicketStatus, string> = {
-	[TicketStatus.OPEN]: "bg-primary/10 text-primary",
-	[TicketStatus.RESOLVED]: "bg-emerald-500/10 text-emerald-700",
-	[TicketStatus.CLOSED]: "bg-muted text-muted-foreground",
-};
-
-const CATEGORY_LABELS: Record<TicketCategory, string> = {
-	[TicketCategory.GENERAL_QUESTION]: "General",
-	[TicketCategory.TECHNICAL_QUESTION]: "Technical",
-	[TicketCategory.REFUND_REQUEST]: "Refund",
-};
-
 const columnHelper = createColumnHelper<Ticket>();
 
 const columns = [
 	columnHelper.accessor("subject", {
 		header: "Subject",
-		cell: (info) => (
-			<span className='block max-w-md truncate font-medium'>
-				{info.getValue()}
-			</span>
+		cell: ({ row, getValue }) => (
+			<Link
+				to={`/tickets/${row.original.id}`}
+				className='block max-w-md truncate font-medium'>
+				{getValue()}
+			</Link>
 		),
 	}),
 	columnHelper.accessor("fromEmail", {
@@ -78,18 +70,7 @@ const columns = [
 	}),
 	columnHelper.accessor("status", {
 		header: "Status",
-		cell: (info) => {
-			const status = info.getValue();
-			return (
-				<span
-					className={
-						"inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium " +
-						STATUS_CLASSES[status]
-					}>
-					{status.toLowerCase()}
-				</span>
-			);
-		},
+		cell: (info) => <StatusPill status={info.getValue()} />,
 	}),
 	columnHelper.accessor("category", {
 		header: "Category",

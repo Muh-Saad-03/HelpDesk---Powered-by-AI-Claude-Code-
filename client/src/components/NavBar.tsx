@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Role } from "core";
 import { authClient, useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
+import { Link as AppLink } from "@/components/ui/link";
 
 export function NavBar() {
   const { data: session } = useSession();
@@ -22,20 +23,14 @@ export function NavBar() {
           Helpdesk
         </Link>
         {session && (
-          <Link
-            to="/tickets"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
+          <AppLink to="/tickets" variant="muted" className="text-sm">
             Tickets
-          </Link>
+          </AppLink>
         )}
         {session?.user.role === Role.ADMIN && (
-          <Link
-            to="/users"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
+          <AppLink to="/users" variant="muted" className="text-sm">
             Users
-          </Link>
+          </AppLink>
         )}
       </div>
       {session && (
