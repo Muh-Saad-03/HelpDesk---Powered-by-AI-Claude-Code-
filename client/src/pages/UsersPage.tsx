@@ -5,7 +5,10 @@ import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import { PlusIcon } from "lucide-react";
 import { NavBar } from "../components/NavBar";
-import { CreateUserDialog } from "../components/CreateUserDialog";
+import {
+	UserFormDialog,
+	type UserFormDialogState,
+} from "../components/UserFormDialog";
 import { UsersTable, type User } from "../components/UsersTable";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -13,7 +16,7 @@ import { Button } from "@/components/ui/button";
 type UsersResponse = { users: User[] };
 
 export function UsersPage() {
-	const [createOpen, setCreateOpen] = useState(false);
+	const [dialog, setDialog] = useState<UserFormDialogState>(null);
 	const {
 		data: users,
 		isPending,
@@ -33,10 +36,10 @@ export function UsersPage() {
 	return (
 		<>
 			<NavBar />
-			<main className='p-8'>
+			<main className='mx-auto max-w-6xl p-8'>
 				<div className='mb-6 flex items-center justify-between gap-4'>
 					<h1 className='text-2xl font-semibold tracking-tight'>Users</h1>
-					<Button onClick={() => setCreateOpen(true)}>
+					<Button onClick={() => setDialog({ mode: "create" })}>
 						<PlusIcon />
 						New User
 					</Button>
@@ -53,12 +56,15 @@ export function UsersPage() {
 				) : users.length === 0 ? (
 					<p className='text-muted-foreground'>No users found.</p>
 				) : (
-					<UsersTable users={users} />
+					<UsersTable
+						users={users}
+						onEdit={(user) => setDialog({ mode: "edit", user })}
+					/>
 				)}
 
-				<CreateUserDialog
-					open={createOpen}
-					onOpenChange={setCreateOpen}
+				<UserFormDialog
+					state={dialog}
+					onClose={() => setDialog(null)}
 				/>
 			</main>
 		</>

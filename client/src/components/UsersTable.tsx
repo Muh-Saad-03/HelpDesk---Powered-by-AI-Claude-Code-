@@ -1,5 +1,7 @@
 /** @format */
 
+import { PencilIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export type User = {
@@ -12,6 +14,7 @@ export type User = {
 
 type Props = {
 	users: User[] | undefined;
+	onEdit?: (user: User) => void;
 };
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -20,18 +23,19 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 
 const SKELETON_ROW_COUNT = 5;
 
-export function UsersTable({ users }: Props) {
+export function UsersTable({ users, onEdit }: Props) {
 	const isLoading = users === undefined;
 
 	return (
-		<div className='overflow-hidden rounded-md border'>
+		<div>
 			<table className='w-full text-sm'>
-				<thead className='bg-muted/50 text-left'>
-					<tr>
+				<thead className='text-left'>
+					<tr className='border-b'>
 						<th className='px-4 py-2 font-medium'>Name</th>
 						<th className='px-4 py-2 font-medium'>Email</th>
 						<th className='px-4 py-2 font-medium'>Role</th>
 						<th className='px-4 py-2 font-medium'>Created</th>
+						<th className='w-px px-4 py-2 font-medium'>Actions</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -51,6 +55,9 @@ export function UsersTable({ users }: Props) {
 									</td>
 									<td className='px-4 py-2'>
 										<Skeleton className='h-4 w-24' />
+									</td>
+									<td className='px-4 py-2'>
+										<Skeleton className='h-7 w-7 rounded-md' />
 									</td>
 								</tr>
 							))
@@ -73,6 +80,15 @@ export function UsersTable({ users }: Props) {
 									</td>
 									<td className='px-4 py-2'>
 										{dateFormatter.format(new Date(u.createdAt))}
+									</td>
+									<td className='px-4 py-2 text-right'>
+										<Button
+											variant='ghost'
+											size='icon-sm'
+											aria-label={`Edit ${u.name}`}
+											onClick={() => onEdit?.(u)}>
+											<PencilIcon />
+										</Button>
 									</td>
 								</tr>
 							))}

@@ -60,8 +60,8 @@ describe("UsersPage", () => {
     ).toBeInTheDocument();
 
     const skeletons = container.querySelectorAll('[data-slot="skeleton"]');
-    // 5 skeleton rows × 4 cells (name/email/role/created) = 20.
-    expect(skeletons.length).toBe(20);
+    // 5 skeleton rows × 5 cells (name/email/role/created/actions) = 25.
+    expect(skeletons.length).toBe(25);
 
     // No real user data should be on screen yet.
     expect(screen.queryByText("Ada Admin")).not.toBeInTheDocument();
@@ -197,5 +197,45 @@ describe("UsersPage — create-user dialog", () => {
     await waitFor(() => {
       expect(screen.queryByText(dialogBodyMatcher)).not.toBeInTheDocument();
     });
+  });
+});
+
+describe("UsersPage — edit-user dialog", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("opens the dialog in edit mode pre-populated when a row's edit button is clicked", async () => {
+    const adaUser = {
+      id: "u-ada",
+      name: "Ada Admin",
+      email: "ada@example.com",
+      role: "ADMIN" as const,
+      createdAt: "2026-01-15T12:00:00.000Z",
+    };
+    mockedAxios.get.mockResolvedValueOnce({ data: { users: [adaUser] } });
+
+    const user = userEvent.setup();
+    renderPage();
+
+    await screen.findByText("Ada Admin");
+
+    expect(
+      screen.queryByRole("heading", { name: /edit user/i }),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: /edit ada admin/i }),
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: /edit user/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/^name$/i)).toHaveValue("Ada Admin");
+    expect(screen.getByLabelText(/^email$/i)).toHaveValue("ada@example.com");
+    expect(screen.getByLabelText(/^password$/i)).toHaveValue("");
+    expect(
+      screen.getByRole("button", { name: /^save changes$/i }),
+    ).toBeInTheDocument();
   });
 });

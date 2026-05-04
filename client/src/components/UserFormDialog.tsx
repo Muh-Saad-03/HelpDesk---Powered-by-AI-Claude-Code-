@@ -1,9 +1,13 @@
 /** @format */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createUserSchema, type CreateUserInput } from "core";
+import {
+	createUserSchema,
+	updateUserSchema,
+	type CreateUserInput,
+} from "core";
 import axios, { AxiosError } from "axios";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -24,32 +28,74 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
+export type EditingUser = { id: string; name: string; email: string };
+
+export type UserFormDialogState =
+	| null
+	| { mode: "create" }
+	| { mode: "edit"; user: EditingUser };
+
 type Props = {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
+	state: UserFormDialogState;
+	onClose: () => void;
 };
 
-export function CreateUserDialog({ open, onOpenChange }: Props) {
+const emptyDefaults: CreateUserInput = { name: "", email: "", password: "" };
+
+function defaultsFor(user: EditingUser | undefined): CreateUserInput {
+	if (!user) return emptyDefaults;
+	return { name: user.name, email: user.email, password: "" };
+}
+
+function userFromState(
+	state: UserFormDialogState,
+): EditingUser | undefined {
+	return state?.mode === "edit" ? state.user : undefined;
+}
+
+export function UserFormDialog({ state, onClose }: Props) {
+	const open = state !== null;
+	const user = userFromState(state);
+	const isEdit = user !== undefined;
 	const queryClient = useQueryClient();
 	const [apiError, setApiError] = useState<string | null>(null);
 
 	const { control, handleSubmit, reset } = useForm<CreateUserInput>({
-		resolver: zodResolver(createUserSchema),
-		defaultValues: { name: "", email: "", password: "" },
+		resolver: zodResolver(isEdit ? updateUserSchema : createUserSchema),
+		defaultValues: defaultsFor(user),
 		mode: "onChange",
 	});
 
+	// Repopulate when the edit target changes (e.g. admin clicks Edit on a
+	// different row without closing the dialog first). Tracking the previous id
+	// in a ref avoids re-firing on unrelated re-renders (every keystroke would
+	// otherwise reset the form back to the user's stored values).
+	const prevUserIdRef = useRef<string | undefined>(user?.id);
+	useEffect(() => {
+		if (prevUserIdRef.current !== user?.id) {
+			prevUserIdRef.current = user?.id;
+			reset(defaultsFor(user));
+		}
+	}, [user, reset]);
+
 	const mutation = useMutation({
 		mutationFn: (input: CreateUserInput) =>
-			axios.post("/api/users", input, { withCredentials: true }),
+			isEdit
+				? axios.patch(`/api/users/${user.id}`, input, {
+						withCredentials: true,
+					})
+				: axios.post("/api/users", input, { withCredentials: true }),
 		onSuccess: async () => {
 			await queryClient.invalidateQueries({ queryKey: ["users"] });
-			reset();
+			reset(emptyDefaults);
 			setApiError(null);
-			onOpenChange(false);
+			onClose();
 		},
 		onError: (err: AxiosError<{ error?: string }>) => {
-			setApiError(err.response?.data?.error ?? "Failed to create user");
+			setApiError(
+				err.response?.data?.error ??
+					(isEdit ? "Failed to update user" : "Failed to create user"),
+			);
 		},
 	});
 
@@ -60,11 +106,21 @@ export function CreateUserDialog({ open, onOpenChange }: Props) {
 
 	function handleOpenChange(next: boolean) {
 		if (!next) {
-			reset();
+			reset(emptyDefaults);
 			setApiError(null);
+			onClose();
 		}
-		onOpenChange(next);
 	}
+
+	const title = isEdit ? "Edit User" : "New User";
+	const description = isEdit
+		? "Update this user's name, email, or password. Leave the password blank to keep it unchanged."
+		: "Create a new agent account. The new user can sign in immediately with the email and password you set.";
+	const submitLabel = isEdit ? "Save changes" : "Create user";
+	const submittingLabel = isEdit ? "Saving..." : "Creating...";
+	const passwordPlaceholder = isEdit
+		? "Leave blank to keep current password"
+		: "Minimum of 8 characters";
 
 	return (
 		<Dialog
@@ -75,11 +131,8 @@ export function CreateUserDialog({ open, onOpenChange }: Props) {
 					onSubmit={onSubmit}
 					noValidate>
 					<DialogHeader>
-						<DialogTitle>New User</DialogTitle>
-						<DialogDescription>
-							Create a new agent account. The new user can sign in immediately
-							with the email and password you set.
-						</DialogDescription>
+						<DialogTitle>{title}</DialogTitle>
+						<DialogDescription>{description}</DialogDescription>
 					</DialogHeader>
 
 					<div className='py-4'>
@@ -89,10 +142,10 @@ export function CreateUserDialog({ open, onOpenChange }: Props) {
 								control={control}
 								render={({ field, fieldState }) => (
 									<Field data-invalid={fieldState.invalid}>
-										<FieldLabel htmlFor='create-user-name'>Name</FieldLabel>
+										<FieldLabel htmlFor='user-form-name'>Name</FieldLabel>
 										<Input
 											{...field}
-											id='create-user-name'
+											id='user-form-name'
 											autoComplete='name'
 											placeholder='Full Name'
 											aria-invalid={fieldState.invalid}
@@ -108,10 +161,10 @@ export function CreateUserDialog({ open, onOpenChange }: Props) {
 								control={control}
 								render={({ field, fieldState }) => (
 									<Field data-invalid={fieldState.invalid}>
-										<FieldLabel htmlFor='create-user-email'>Email</FieldLabel>
+										<FieldLabel htmlFor='user-form-email'>Email</FieldLabel>
 										<Input
 											{...field}
-											id='create-user-email'
+											id='user-form-email'
 											type='email'
 											autoComplete='off'
 											placeholder='person@example.com'
@@ -128,15 +181,15 @@ export function CreateUserDialog({ open, onOpenChange }: Props) {
 								control={control}
 								render={({ field, fieldState }) => (
 									<Field data-invalid={fieldState.invalid}>
-										<FieldLabel htmlFor='create-user-password'>
+										<FieldLabel htmlFor='user-form-password'>
 											Password
 										</FieldLabel>
 										<Input
 											{...field}
-											id='create-user-password'
+											id='user-form-password'
 											type='password'
 											autoComplete='new-password'
-											placeholder='Minimum of 8 characters'
+											placeholder={passwordPlaceholder}
 											aria-invalid={fieldState.invalid}
 										/>
 										{fieldState.invalid && (
@@ -164,7 +217,7 @@ export function CreateUserDialog({ open, onOpenChange }: Props) {
 						<Button
 							type='submit'
 							disabled={mutation.isPending}>
-							{mutation.isPending ? "Creating..." : "Create user"}
+							{mutation.isPending ? submittingLabel : submitLabel}
 						</Button>
 					</DialogFooter>
 				</form>
