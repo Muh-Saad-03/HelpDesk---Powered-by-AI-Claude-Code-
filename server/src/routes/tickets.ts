@@ -13,6 +13,7 @@ import {
 import { polishReplyText, summarizeTicketText } from "../ai.ts";
 import { prisma } from "../db.ts";
 import { requireRole } from "../middleware/requireRole.ts";
+import { enqueueSendReply } from "../queue.ts";
 
 const REPLY_SELECT = {
 	id: true,
@@ -252,6 +253,9 @@ ticketsRouter.post(
 			},
 			select: REPLY_SELECT,
 		});
+		// Email the customer out-of-band — pg-boss handles retries on
+		// SendGrid hiccups, and the API responds without waiting on it.
+		await enqueueSendReply(reply.id);
 		res.status(201).json({ reply });
 	},
 );

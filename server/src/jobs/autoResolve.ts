@@ -5,6 +5,7 @@ import { SenderType, TicketStatus } from "core";
 import { autoResolveTicket } from "../ai.ts";
 import { prisma } from "../db.ts";
 import { loadKnowledgeBase } from "../knowledge-base.ts";
+import { enqueueSendReply } from "./sendReply.ts";
 
 export const AUTO_RESOLVE_QUEUE = "auto-resolve-ticket";
 
@@ -24,15 +25,17 @@ export async function registerAutoResolveWorker(boss: PgBoss): Promise<void> {
 		{ batchSize: 1, pollingIntervalSeconds: 2 },
 		async ([job]: Job<AutoResolveJob>[]) => {
 			if (!job) return;
-			await runAutoResolve(job.data.ticketId);
+			await runAutoResolve(boss, job.data.ticketId);
 		},
 	);
 }
 
 // Drives a ticket from NEW → PROCESSING → (RESOLVED | OPEN). The terminal
 // state is always set, even on LLM failure, so a stuck ticket can't sit in
-// PROCESSING forever and disappear from the agent list.
-async function runAutoResolve(ticketId: string): Promise<void> {
+// PROCESSING forever and disappear from the agent list. `boss` is threaded
+// through so the success path can chain a send-reply job without importing
+// queue.ts (which would create a cycle: queue → autoResolve → queue).
+async function runAutoResolve(boss: PgBoss, ticketId: string): Promise<void> {
 	const ticket = await prisma.ticket.findUnique({
 		where: { id: ticketId },
 		select: {
@@ -69,7 +72,7 @@ async function runAutoResolve(ticketId: string): Promise<void> {
 			// Post the AI reply as an AGENT-typed reply with no authorId — the
 			// `Reply.author` relation is already nullable, so a missing author
 			// is the marker for "system / AI" replies.
-			await prisma.$transaction([
+			const [reply] = await prisma.$transaction([
 				prisma.reply.create({
 					data: {
 						ticketId,
@@ -85,6 +88,9 @@ async function runAutoResolve(ticketId: string): Promise<void> {
 					select: { id: true },
 				}),
 			]);
+			// Chain the outbound email — handled async by the send-reply
+			// worker so the auto-resolve job returns fast.
+			await enqueueSendReply(boss, reply.id);
 		} else {
 			// AI gave up — release the ticket to a human by clearing the AI
 			// assignee alongside the status flip. (Inbound assigns every new

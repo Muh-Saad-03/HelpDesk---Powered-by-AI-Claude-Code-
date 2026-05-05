@@ -9,6 +9,10 @@ import {
 	enqueueClassify as enqueueClassifyJob,
 	registerClassifyWorker,
 } from "./jobs/classify.ts";
+import {
+	enqueueSendReply as enqueueSendReplyJob,
+	registerSendReplyWorker,
+} from "./jobs/sendReply.ts";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -28,14 +32,19 @@ export const enqueueClassify = (ticketId: string): Promise<void> =>
 	enqueueClassifyJob(boss, ticketId);
 export const enqueueAutoResolve = (ticketId: string): Promise<void> =>
 	enqueueAutoResolveJob(boss, ticketId);
+export const enqueueSendReply = (replyId: string): Promise<void> =>
+	enqueueSendReplyJob(boss, replyId);
 
 export async function startQueue(): Promise<void> {
 	await boss.start();
 	await Promise.all([
 		registerClassifyWorker(boss),
 		registerAutoResolveWorker(boss),
+		registerSendReplyWorker(boss),
 	]);
-	console.log("pg-boss started; classify + auto-resolve workers registered");
+	console.log(
+		"pg-boss started; classify + auto-resolve + send-reply workers registered",
+	);
 }
 
 export async function stopQueue(): Promise<void> {
