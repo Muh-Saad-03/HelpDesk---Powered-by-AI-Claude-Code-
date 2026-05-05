@@ -86,18 +86,22 @@ async function runAutoResolve(ticketId: string): Promise<void> {
 				}),
 			]);
 		} else {
+			// AI gave up — release the ticket to a human by clearing the AI
+			// assignee alongside the status flip. (Inbound assigns every new
+			// ticket to the AI agent so PROCESSING tickets show ownership.)
 			await prisma.ticket.update({
 				where: { id: ticketId },
-				data: { status: TicketStatus.OPEN },
+				data: { status: TicketStatus.OPEN, assigneeId: null },
 				select: { id: true },
 			});
 		}
 	} catch (err) {
 		// LLM failed (rate-limit, network, schema validation). Surface the
-		// ticket to a human rather than leaving it stuck in PROCESSING.
+		// ticket to a human rather than leaving it stuck in PROCESSING, and
+		// drop the AI assignment so the ticket reads as truly unowned.
 		await prisma.ticket.update({
 			where: { id: ticketId },
-			data: { status: TicketStatus.OPEN },
+			data: { status: TicketStatus.OPEN, assigneeId: null },
 			select: { id: true },
 		});
 		throw err;

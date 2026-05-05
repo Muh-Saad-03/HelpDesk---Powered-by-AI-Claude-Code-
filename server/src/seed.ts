@@ -1,6 +1,7 @@
 import { Role } from "core";
 import { auth } from "./auth.ts";
 import { prisma } from "./db.ts";
+import { AI_AGENT_EMAIL, AI_AGENT_NAME } from "./aiAgent.ts";
 
 const email = process.env.ADMIN_EMAIL;
 const password = process.env.ADMIN_PASSWORD;
@@ -13,7 +14,9 @@ if (!email || !password) {
 
 async function upsertUser(opts: {
 	email: string;
-	password: string;
+	// Omit to create a no-login user (no Account row) — used for system
+	// users like the AI agent that should never authenticate.
+	password?: string;
 	name: string;
 	role: Role;
 }) {
@@ -32,10 +35,18 @@ async function upsertUser(opts: {
 		return;
 	}
 
-	const ctx = await auth.$context;
-	const hashedPassword = await ctx.password.hash(opts.password);
 	const userId = crypto.randomUUID();
-	const accountId = crypto.randomUUID();
+
+	const accountsCreate = opts.password
+		? {
+				create: {
+					id: crypto.randomUUID(),
+					accountId: userId,
+					providerId: "credential",
+					password: await (await auth.$context).password.hash(opts.password),
+				},
+			}
+		: undefined;
 
 	await prisma.user.create({
 		data: {
@@ -44,14 +55,7 @@ async function upsertUser(opts: {
 			name: opts.name,
 			emailVerified: false,
 			role: opts.role,
-			accounts: {
-				create: {
-					id: accountId,
-					accountId: userId,
-					providerId: "credential",
-					password: hashedPassword,
-				},
-			},
+			...(accountsCreate ? { accounts: accountsCreate } : {}),
 		},
 	});
 
@@ -59,6 +63,16 @@ async function upsertUser(opts: {
 }
 
 await upsertUser({ email, password, name, role: Role.ADMIN });
+
+// AI agent: the system identity new tickets are assigned to while the
+// auto-resolve worker is consulting the LLM. Created in every environment
+// (not just test) — production needs it for the inbound webhook to work.
+// No password = no Account row = nobody can log in as it.
+await upsertUser({
+	email: AI_AGENT_EMAIL,
+	name: AI_AGENT_NAME,
+	role: Role.AGENT,
+});
 
 // Seed an additional AGENT user only in the test environment so e2e tests
 // have a deterministic non-admin account for role-gating coverage. Kept

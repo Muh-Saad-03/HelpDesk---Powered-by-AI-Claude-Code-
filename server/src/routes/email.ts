@@ -3,6 +3,7 @@
 import { Router, type Request, type Response } from "express";
 import { timingSafeEqual } from "node:crypto";
 import { TicketStatus, inboundEmailSchema } from "core";
+import { AI_AGENT_EMAIL, getAiAgentId } from "../aiAgent.ts";
 import { prisma } from "../db.ts";
 import { enqueueAutoResolve, enqueueClassify } from "../queue.ts";
 
@@ -52,6 +53,16 @@ emailRouter.post("/inbound", async (req: Request, res: Response) => {
 		return;
 	}
 
+	// Assign new tickets to the AI agent up front. The auto-resolve worker
+	// will keep the assignment on success (RESOLVED) and clear it on failure
+	// (OPEN), so the assignee always reflects who currently owns the ticket.
+	const aiAgentId = await getAiAgentId();
+	if (!aiAgentId) {
+		console.warn(
+			`AI agent (${AI_AGENT_EMAIL}) not found — creating ticket unassigned. Run "bun run db:seed" to create it.`,
+		);
+	}
+
 	const ticket = await prisma.ticket.create({
 		data: {
 			subject: subject.trim() === "" ? "(no subject)" : subject,
@@ -59,6 +70,7 @@ emailRouter.post("/inbound", async (req: Request, res: Response) => {
 			fromEmail,
 			fromName: fromName ?? null,
 			status: TicketStatus.NEW,
+			assigneeId: aiAgentId,
 		},
 		select: { id: true },
 	});

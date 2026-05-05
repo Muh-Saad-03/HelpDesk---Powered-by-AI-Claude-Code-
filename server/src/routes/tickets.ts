@@ -106,6 +106,32 @@ ticketsRouter.get(
 	},
 );
 
+// Must be declared before "/:id" — Express matches routes in declaration
+// order, so otherwise "stats" gets caught as an :id lookup and 404s.
+//
+// All aggregation lives in the get_ticket_stats() Postgres function (see
+// migration 20260505001253_add_ticket_stats_function). The handler is just
+// a pass-through: one round-trip, jsonb already in the response shape.
+type TicketStats = {
+	total: number;
+	open: number;
+	aiResolved: number;
+	aiResolvedPct: number | null;
+	avgResolutionMs: number | null;
+	daily: { date: string; count: number }[];
+};
+
+ticketsRouter.get(
+	"/stats",
+	requireRole(Role.ADMIN, Role.AGENT),
+	async (_req: Request, res: Response) => {
+		const rows = await prisma.$queryRaw<
+			[{ stats: TicketStats }]
+		>`SELECT get_ticket_stats() AS stats`;
+		res.json(rows[0].stats);
+	},
+);
+
 ticketsRouter.get(
 	"/:id",
 	requireRole(Role.ADMIN, Role.AGENT),
