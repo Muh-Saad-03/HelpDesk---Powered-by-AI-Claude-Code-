@@ -1,0 +1,24 @@
+# Railway service configuration.
+# https://docs.railway.com/reference/config-as-code
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Every container boot runs `prisma migrate deploy` then starts the
+# Express server (see Dockerfile CMD). Override here only if you want
+# to swap the entrypoint per environment.
+startCommand = "sh -c 'bunx prisma migrate deploy && bun src/index.ts'"
+
+# Health probe — Express exposes /api/health which returns 200 + JSON
+# uptime when the process is responsive (the DB-backed /api/db/health
+# is intentionally not used here so a transient DB blip doesn't kill
+# the deploy).
+healthcheckPath = "/api/health"
+healthcheckTimeout = 30
+
+# Restart on crash but back off — pg-boss bootstrapping or a missing
+# env var should be loud, not silently retried into oblivion.
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5

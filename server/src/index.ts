@@ -4,6 +4,7 @@
 // (http, express, etc.) can wrap the modules as they're loaded.
 import "./instrument.ts";
 
+import path from "node:path";
 import express, {
 	type Request,
 	type Response,
@@ -21,6 +22,13 @@ import { ticketsRouter } from "./routes/tickets.ts";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
+const isProduction = process.env.NODE_ENV === "production";
+
+// Behind Railway's load balancer (or any reverse proxy), Express needs to
+// trust the X-Forwarded-* headers so `req.secure` and `req.ip` resolve
+// correctly — Better Auth's secure cookies and any rate-limiting depend
+// on this.
+if (isProduction) app.set("trust proxy", 1);
 
 const trustedOrigins = (process.env.TRUSTED_ORIGINS ?? "http://localhost:5173")
 	.split(",")
@@ -46,6 +54,26 @@ app.get("/api/db/health", async (_req: Request, res: Response) => {
 app.use("/api/users", usersRouter);
 app.use("/api/email", emailRouter);
 app.use("/api/tickets", ticketsRouter);
+
+// In production we serve the built React SPA from the same origin as the
+// API. This keeps the deployment to a single Railway service and avoids
+// any cross-site-cookie footgun for Better Auth's session cookies. In
+// dev, Vite handles its own dev server on :5173, so we skip this entirely.
+if (isProduction) {
+	const clientDist = path.resolve(import.meta.dirname, "../../client/dist");
+	// `index: true` (default) lets the static middleware serve index.html
+	// for "/" — Express 5's `/*splat` wildcard matches one-or-more segments
+	// and so wouldn't catch "/" on its own.
+	app.use(express.static(clientDist, { maxAge: "1h" }));
+
+	// SPA fallback — anything that isn't an /api/* route gets index.html so
+	// react-router can resolve it client-side. Unknown /api/* paths fall
+	// through to the 404 / error handler instead of being served HTML.
+	app.get("/*splat", (req: Request, res: Response, next: NextFunction) => {
+		if (req.path.startsWith("/api/")) return next();
+		res.sendFile(path.join(clientDist, "index.html"));
+	});
+}
 
 // Sentry's Express error handler — captures anything that bubbles out of a
 // route handler. Must come AFTER all routes and BEFORE our own error
