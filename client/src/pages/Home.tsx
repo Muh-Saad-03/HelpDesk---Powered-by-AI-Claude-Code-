@@ -1,13 +1,8 @@
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
+import { ArrowUpRight, Sparkles } from "lucide-react";
 import { NavBar } from "../components/NavBar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type DailyPoint = { date: string; count: number };
@@ -43,9 +38,6 @@ const monthDayFormatter = new Intl.DateTimeFormat(undefined, {
   day: "numeric",
 });
 
-// Parse YYYY-MM-DD as a local date (the server bucketed in local time too).
-// Using `new Date("2026-05-05")` would interpret it as UTC midnight, which
-// can shift the label across the day-boundary in negative-offset zones.
 function parseLocalDate(iso: string): Date {
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1);
@@ -54,6 +46,15 @@ function parseLocalDate(iso: string): Date {
 function formatShortDate(iso: string): string {
   return monthDayFormatter.format(parseLocalDate(iso));
 }
+
+type CardSpec = {
+  index: string;
+  label: string;
+  value: string | null;
+  hint?: string;
+  emphasis?: "signal" | "default";
+  trend?: number[];
+};
 
 export function Home() {
   const { data, isPending, isError, error } = useQuery({
@@ -67,36 +68,70 @@ export function Home() {
     },
   });
 
-  const cards: { label: string; value: string | null }[] = [
+  const trend = data?.daily.map((d) => d.count) ?? [];
+
+  const cards: CardSpec[] = [
     {
+      index: "01",
       label: "Total tickets",
       value: data ? data.total.toLocaleString() : null,
+      hint: "all-time",
+      trend,
     },
     {
+      index: "02",
       label: "Open tickets",
       value: data ? data.open.toLocaleString() : null,
+      hint: "awaiting action",
     },
     {
+      index: "03",
       label: "Resolved by AI",
       value: data ? data.aiResolved.toLocaleString() : null,
+      hint: "auto-closed",
+      emphasis: "signal",
     },
     {
-      label: "% resolved by AI",
+      index: "04",
+      label: "AI resolution rate",
       value: data ? formatPct(data.aiResolvedPct) : null,
+      hint: "of resolved",
     },
     {
-      label: "Avg resolution time",
+      index: "05",
+      label: "Avg resolution",
       value: data ? formatDuration(data.avgResolutionMs) : null,
+      hint: "time-to-close",
     },
   ];
 
   return (
     <>
       <NavBar />
-      <main className="mx-auto max-w-6xl p-8">
-        <h1 className="mb-6 text-2xl font-semibold tracking-tight">
-          Dashboard
-        </h1>
+      <main className="mx-auto max-w-7xl px-5 pt-8 pb-24 sm:px-8 lg:px-12">
+        {/* Header */}
+        <div className="mb-10 flex flex-wrap items-end justify-between gap-6 animate-rise">
+          <div>
+            <span className="font-mono text-[10px] tracking-[0.22em] uppercase text-muted-foreground">
+              ── Section 01 / Overview
+            </span>
+            <div className="mt-3 flex items-baseline gap-3 flex-wrap">
+              <h1 className="text-4xl font-semibold tracking-tight text-display sm:text-[2.75rem]">
+                Dashboard
+              </h1>
+              <span aria-hidden className="font-mono text-base font-normal tracking-normal text-muted-foreground/70">
+                / last 30 days
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 font-mono text-[10px] tracking-widest uppercase text-muted-foreground">
+            <span className="status-dot bg-status-resolved text-status-resolved animate-pulse-dot" />
+            <span>Live</span>
+            <span aria-hidden className="h-3 w-px bg-border" />
+            <time>{new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</time>
+          </div>
+        </div>
+
         {isError ? (
           <Alert variant="destructive">
             <AlertDescription>
@@ -105,17 +140,58 @@ export function Home() {
           </Alert>
         ) : (
           <>
-            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              {cards.map((c) => (
-                <MetricCard
+            {/* Stat grid — single bordered shell, internal hairlines */}
+            <section
+              aria-label="Key metrics"
+              className="mb-10 grid grid-cols-1 overflow-hidden rounded-lg border hairline bg-surface sm:grid-cols-2 lg:grid-cols-5"
+            >
+              {cards.map((c, i) => (
+                <MetricTile
                   key={c.label}
-                  label={c.label}
-                  value={c.value}
+                  spec={c}
                   loading={isPending}
+                  position={i}
+                  total={cards.length}
                 />
               ))}
+            </section>
+
+            {/* Chart panel */}
+            <section className="surface-panel overflow-hidden animate-rise" style={{ animationDelay: "240ms" }}>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b hairline px-5 py-4">
+                <div className="flex items-baseline gap-3">
+                  <span className="font-mono text-[10px] tracking-widest uppercase text-muted-foreground">
+                    Series 01
+                  </span>
+                  <h2 className="text-[15px] font-medium">
+                    Tickets per day (last 30 days)
+                  </h2>
+                </div>
+                <div className="flex items-center gap-2 font-mono text-[10px] tracking-widest uppercase text-muted-foreground">
+                  <Sparkles className="size-3" />
+                  <span>auto-bucketed · local tz</span>
+                </div>
+              </div>
+              <div className="px-5 py-6">
+                {isPending || !data ? (
+                  <Skeleton className="h-56 w-full" />
+                ) : (
+                  <ChartBody data={data.daily} />
+                )}
+              </div>
+            </section>
+
+            {/* Footer ribbon */}
+            <div className="mt-8 flex flex-wrap items-center justify-between gap-3 font-mono text-[10px] tracking-widest uppercase text-muted-foreground">
+              <span>End of section 01</span>
+              <a
+                href="/tickets"
+                className="group/link inline-flex items-center gap-1.5 text-foreground transition-colors hover:text-foreground"
+              >
+                <span>Go to tickets</span>
+                <ArrowUpRight className="size-3 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
+              </a>
             </div>
-            <TicketsPerDayChart data={data?.daily} loading={isPending} />
           </>
         )}
       </main>
@@ -123,53 +199,88 @@ export function Home() {
   );
 }
 
-function MetricCard({
-  label,
-  value,
+function MetricTile({
+  spec,
   loading,
+  position,
+  total,
 }: {
-  label: string;
-  value: string | null;
+  spec: CardSpec;
   loading: boolean;
+  position: number;
+  total: number;
 }) {
+  const isLastCol = (position + 1) % 5 === 0;
+  const isLastRow = position >= total - (total % 5 || 5);
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {label}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {loading || value === null ? (
-          <Skeleton className="h-9 w-20" />
-        ) : (
-          <div className="text-3xl font-semibold tabular-nums">{value}</div>
+    <div
+      className={
+        "group/tile relative flex flex-col gap-3 px-5 py-5 animate-fade " +
+        (!isLastCol ? "lg:border-r hairline " : "") +
+        (!isLastRow ? "border-b hairline lg:border-b-0 " : "")
+      }
+      style={{ animationDelay: `${position * 60}ms` }}
+    >
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="font-mono text-[9px] tracking-widest uppercase text-muted-foreground">
+          {spec.index} · {spec.label}
+        </span>
+        {spec.emphasis === "signal" && !loading && (
+          <span
+            aria-hidden
+            className="status-dot bg-signal text-signal"
+          />
         )}
-      </CardContent>
-    </Card>
+      </div>
+      {loading || spec.value === null ? (
+        <Skeleton className="h-9 w-24" />
+      ) : (
+        <div className="flex items-baseline gap-2">
+          <span
+            className={
+              "font-mono text-3xl font-semibold tabular-nums tracking-tight " +
+              (spec.emphasis === "signal" ? "" : "")
+            }
+          >
+            {spec.value}
+          </span>
+        </div>
+      )}
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <span>{spec.hint}</span>
+        {spec.trend && spec.trend.length > 1 && !loading && (
+          <Sparkline data={spec.trend} />
+        )}
+      </div>
+    </div>
   );
 }
 
-function TicketsPerDayChart({
-  data,
-  loading,
-}: {
-  data: DailyPoint[] | undefined;
-  loading: boolean;
-}) {
+function Sparkline({ data }: { data: number[] }) {
+  const max = Math.max(1, ...data);
+  const w = 72;
+  const h = 18;
+  const step = w / (data.length - 1 || 1);
+  const points = data
+    .map((v, i) => `${(i * step).toFixed(1)},${(h - (v / max) * h).toFixed(1)}`)
+    .join(" ");
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Tickets per day (last 30 days)</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {loading || !data ? (
-          <Skeleton className="h-48 w-full" />
-        ) : (
-          <ChartBody data={data} />
-        )}
-      </CardContent>
-    </Card>
+    <svg
+      viewBox={`0 0 ${w} ${h}`}
+      width={w}
+      height={h}
+      className="text-foreground/50"
+      aria-hidden
+    >
+      <polyline
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={points}
+      />
+    </svg>
   );
 }
 
@@ -179,39 +290,81 @@ function ChartBody({ data }: { data: DailyPoint[] }) {
   const last = data[data.length - 1];
   const mid = data[Math.floor(data.length / 2)];
 
+  // Y-axis ticks: 0, ~half, max
+  const halfTick = Math.round(max / 2);
+  const ticks = [max, halfTick, 0];
+
   return (
     <div>
-      <div className="flex gap-3">
-        <div className="flex h-48 flex-col justify-between text-xs tabular-nums text-muted-foreground">
-          <span>{max}</span>
-          <span>0</span>
+      <div className="flex gap-4">
+        <div className="flex h-56 w-8 flex-col justify-between font-mono text-[10px] tabular-nums text-muted-foreground">
+          {ticks.map((t) => (
+            <span key={t} className="text-right">
+              {t}
+            </span>
+          ))}
         </div>
         <div
-          className="flex h-48 flex-1 items-end gap-1 border-b border-l border-border/60 pl-1"
+          className="relative flex h-56 flex-1 items-end gap-1.5 border-b border-l hairline pl-1"
           role="img"
           aria-label={`Bar chart of tickets per day for the last 30 days, peaking at ${max}`}
         >
-          {data.map((d) => {
+          {/* horizontal guide lines */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 flex flex-col justify-between"
+          >
+            {ticks.map((_, i) => (
+              <div
+                key={i}
+                className={
+                  "border-t " +
+                  (i === ticks.length - 1
+                    ? "border-transparent"
+                    : "border-dashed border-foreground/8")
+                }
+              />
+            ))}
+          </div>
+          {data.map((d, i) => {
             const heightPct = (d.count / max) * 100;
+            const isLast = i === data.length - 1;
             return (
               <div
                 key={d.date}
-                className="group relative flex h-full flex-1 items-end"
+                className="group/bar relative flex h-full flex-1 items-end"
                 title={`${formatShortDate(d.date)}: ${d.count} ticket${d.count === 1 ? "" : "s"}`}
               >
                 <div
-                  className="w-full rounded-t bg-foreground/70 transition-colors group-hover:bg-foreground"
+                  className={
+                    "relative w-full transition-all duration-300 " +
+                    (isLast
+                      ? "bg-signal group-hover/bar:bg-signal"
+                      : "bg-foreground/65 group-hover/bar:bg-foreground")
+                  }
                   style={{
                     height: `${heightPct}%`,
                     minHeight: d.count > 0 ? "2px" : "0",
                   }}
                 />
+                {/* hover tooltip */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 translate-y-1 scale-95 whitespace-nowrap rounded-md border hairline bg-surface px-2 py-1 font-mono text-[10px] tracking-wide opacity-0 shadow-sm transition-all group-hover/bar:translate-y-0 group-hover/bar:scale-100 group-hover/bar:opacity-100"
+                >
+                  <span className="text-muted-foreground">
+                    {formatShortDate(d.date)}
+                  </span>
+                  <span className="ml-1.5 font-semibold tabular-nums">
+                    {d.count}
+                  </span>
+                </div>
               </div>
             );
           })}
         </div>
       </div>
-      <div className="mt-2 ml-8 flex justify-between text-xs text-muted-foreground">
+      <div className="mt-3 ml-12 flex justify-between font-mono text-[10px] tracking-widest uppercase text-muted-foreground">
         <span>{first ? formatShortDate(first.date) : ""}</span>
         <span>{mid ? formatShortDate(mid.date) : ""}</span>
         <span>{last ? formatShortDate(last.date) : ""}</span>

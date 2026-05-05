@@ -7,28 +7,49 @@ import { StatusSelect } from "./StatusSelect";
 
 export function UpdateTicket({ ticket }: { ticket: Ticket }) {
 	return (
-		<aside className='space-y-4 text-sm'>
-			<div>
-				<div className='mb-1 text-xs text-muted-foreground'>Status</div>
-				<StatusSelect
-					ticketId={ticket.id}
-					currentStatus={ticket.status}
-				/>
+		<aside className='surface-panel overflow-hidden text-sm'>
+			<div className='border-b hairline px-4 py-2.5'>
+				<span className='font-mono text-[10px] tracking-widest uppercase text-muted-foreground'>
+					Properties
+				</span>
 			</div>
-			<div>
-				<div className='mb-1 text-xs text-muted-foreground'>Category</div>
-				<CategorySelect
-					ticketId={ticket.id}
-					currentCategory={ticket.category}
-				/>
-			</div>
-			<div>
-				<div className='mb-1 text-xs text-muted-foreground'>Assignee</div>
-				<AssigneeSelect
-					ticketId={ticket.id}
-					currentAssigneeId={ticket.assigneeId}
-				/>
+			<div className='divide-y divide-[var(--hairline)]'>
+				<PropertyRow label='Status'>
+					<StatusSelect
+						ticketId={ticket.id}
+						currentStatus={ticket.status}
+					/>
+				</PropertyRow>
+				<PropertyRow label='Category'>
+					<CategorySelect
+						ticketId={ticket.id}
+						currentCategory={ticket.category}
+					/>
+				</PropertyRow>
+				<PropertyRow label='Assignee'>
+					<AssigneeSelect
+						ticketId={ticket.id}
+						currentAssigneeId={ticket.assigneeId}
+					/>
+				</PropertyRow>
 			</div>
 		</aside>
+	);
+}
+
+function PropertyRow({
+	label,
+	children,
+}: {
+	label: string;
+	children: React.ReactNode;
+}) {
+	return (
+		<div className='space-y-1.5 px-4 py-3'>
+			<div className='font-mono text-[9px] tracking-widest uppercase text-muted-foreground'>
+				{label}
+			</div>
+			{children}
+		</div>
 	);
 }

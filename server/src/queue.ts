@@ -1,6 +1,7 @@
 /** @format */
 
 import { PgBoss } from "pg-boss";
+import * as Sentry from "@sentry/bun";
 import {
 	enqueueAutoResolve as enqueueAutoResolveJob,
 	registerAutoResolveWorker,
@@ -23,6 +24,7 @@ export const boss = new PgBoss(connectionString);
 
 boss.on("error", (err: Error) => {
 	console.error("pg-boss error:", err);
+	Sentry.captureException(err, { tags: { source: "pg-boss" } });
 });
 
 // Thin wrappers so callers don't have to thread the singleton boss through

@@ -1,21 +1,30 @@
 import { TicketCategory, TicketStatus } from "core";
 
-const STATUS_CLASSES: Record<TicketStatus, string> = {
-	[TicketStatus.NEW]: "bg-amber-500/10 text-amber-700",
-	[TicketStatus.PROCESSING]: "bg-amber-500/10 text-amber-700",
-	[TicketStatus.OPEN]: "bg-primary/10 text-primary",
-	[TicketStatus.RESOLVED]: "bg-emerald-500/10 text-emerald-700",
-	[TicketStatus.CLOSED]: "bg-muted text-muted-foreground",
+const STATUS_DOT: Record<TicketStatus, string> = {
+	[TicketStatus.NEW]: "text-status-new",
+	[TicketStatus.PROCESSING]: "text-status-new",
+	[TicketStatus.OPEN]: "text-status-open",
+	[TicketStatus.RESOLVED]: "text-status-resolved",
+	[TicketStatus.CLOSED]: "text-status-closed",
+};
+
+// PROCESSING gets a live pulse — it's actively being worked by the AI
+const STATUS_PULSE: Partial<Record<TicketStatus, boolean>> = {
+	[TicketStatus.PROCESSING]: true,
 };
 
 export function StatusPill({ status }: { status: TicketStatus }) {
 	return (
-		<span
-			className={
-				"inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium " +
-				STATUS_CLASSES[status]
-			}>
-			{status.toLowerCase()}
+		<span className="inline-flex items-center gap-2 whitespace-nowrap font-mono text-[10px] tracking-widest uppercase text-foreground">
+			<span
+				aria-hidden
+				className={
+					"status-dot bg-current " +
+					STATUS_DOT[status] +
+					(STATUS_PULSE[status] ? " animate-pulse-dot" : "")
+				}
+			/>
+			<span>{status.toLowerCase()}</span>
 		</span>
 	);
 }

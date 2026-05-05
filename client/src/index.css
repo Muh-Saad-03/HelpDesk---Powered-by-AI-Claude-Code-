@@ -2,12 +2,14 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+@import "@fontsource-variable/jetbrains-mono";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: 'Geist Variable', sans-serif;
+    --font-heading: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, monospace;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -39,8 +41,18 @@
     --color-card: var(--card);
     --color-foreground: var(--foreground);
     --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
+    --color-signal: var(--signal);
+    --color-signal-foreground: var(--signal-foreground);
+    --color-status-new: var(--status-new);
+    --color-status-open: var(--status-open);
+    --color-status-resolved: var(--status-resolved);
+    --color-status-closed: var(--status-closed);
+    --color-status-breach: var(--status-breach);
+    --color-surface: var(--surface);
+    --color-surface-2: var(--surface-2);
+    --color-hairline: var(--hairline);
+    --radius-sm: calc(var(--radius) * 0.55);
+    --radius-md: calc(var(--radius) * 0.75);
     --radius-lg: var(--radius);
     --radius-xl: calc(var(--radius) * 1.4);
     --radius-2xl: calc(var(--radius) * 1.8);
@@ -48,83 +60,291 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Operator's Console — light (warm paper, ink, signal-lime accent)
+   ────────────────────────────────────────────────────────────────────────── */
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
+    --background: oklch(0.985 0.004 95);
+    --foreground: oklch(0.18 0.012 275);
+    --surface: oklch(1 0 0);
+    --surface-2: oklch(0.965 0.005 95);
+    --hairline: oklch(0.91 0.005 90);
+
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
+    --card-foreground: oklch(0.18 0.012 275);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    --popover-foreground: oklch(0.18 0.012 275);
+
+    /* Primary stays ink — the lime is reserved for the signal accent */
+    --primary: oklch(0.20 0.012 275);
+    --primary-foreground: oklch(0.985 0.004 95);
+
+    --secondary: oklch(0.965 0.005 95);
+    --secondary-foreground: oklch(0.20 0.012 275);
+    --muted: oklch(0.965 0.005 95);
+    --muted-foreground: oklch(0.50 0.012 270);
+    --accent: oklch(0.965 0.005 95);
+    --accent-foreground: oklch(0.20 0.012 275);
+
+    /* The signature: a sharp electric chartreuse used surgically */
+    --signal: oklch(0.86 0.20 122);
+    --signal-foreground: oklch(0.16 0.04 130);
+
+    --destructive: oklch(0.58 0.22 27);
+    --border: oklch(0.91 0.005 90);
+    --input: oklch(0.91 0.005 90);
+    --ring: oklch(0.74 0.16 124);
+
+    /* Status semantics — dot/border colors */
+    --status-new: oklch(0.78 0.16 76);          /* amber  */
+    --status-open: oklch(0.62 0.18 250);        /* steel blue */
+    --status-resolved: oklch(0.74 0.18 142);    /* signal-lime/green family */
+    --status-closed: oklch(0.62 0.012 270);     /* slate */
+    --status-breach: oklch(0.65 0.24 18);       /* magenta-red */
+
+    --chart-1: oklch(0.74 0.18 142);
+    --chart-2: oklch(0.62 0.18 250);
+    --chart-3: oklch(0.78 0.16 76);
+    --chart-4: oklch(0.65 0.24 18);
+    --chart-5: oklch(0.50 0.012 270);
+
+    --radius: 0.5rem;
+    --sidebar: oklch(0.985 0.004 95);
+    --sidebar-foreground: oklch(0.18 0.012 275);
+    --sidebar-primary: oklch(0.20 0.012 275);
+    --sidebar-primary-foreground: oklch(0.985 0.004 95);
+    --sidebar-accent: oklch(0.965 0.005 95);
+    --sidebar-accent-foreground: oklch(0.20 0.012 275);
+    --sidebar-border: oklch(0.91 0.005 90);
+    --sidebar-ring: oklch(0.74 0.16 124);
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+    --background: oklch(0.155 0.008 270);
+    --foreground: oklch(0.96 0.005 95);
+    --surface: oklch(0.195 0.010 270);
+    --surface-2: oklch(0.225 0.012 270);
+    --hairline: oklch(0.30 0.012 270);
+
+    --card: oklch(0.195 0.010 270);
+    --card-foreground: oklch(0.96 0.005 95);
+    --popover: oklch(0.195 0.010 270);
+    --popover-foreground: oklch(0.96 0.005 95);
+
+    --primary: oklch(0.95 0.005 95);
+    --primary-foreground: oklch(0.16 0.012 270);
+
+    --secondary: oklch(0.235 0.012 270);
+    --secondary-foreground: oklch(0.96 0.005 95);
+    --muted: oklch(0.225 0.012 270);
+    --muted-foreground: oklch(0.66 0.012 270);
+    --accent: oklch(0.235 0.012 270);
+    --accent-foreground: oklch(0.96 0.005 95);
+
+    --signal: oklch(0.85 0.22 124);
+    --signal-foreground: oklch(0.14 0.04 130);
+
+    --destructive: oklch(0.70 0.20 22);
+    --border: oklch(1 0 0 / 8%);
+    --input: oklch(1 0 0 / 12%);
+    --ring: oklch(0.78 0.18 124);
+
+    --status-new: oklch(0.80 0.16 76);
+    --status-open: oklch(0.70 0.16 250);
+    --status-resolved: oklch(0.80 0.20 142);
+    --status-closed: oklch(0.62 0.012 270);
+    --status-breach: oklch(0.72 0.22 18);
+
+    --chart-1: oklch(0.80 0.20 142);
+    --chart-2: oklch(0.70 0.16 250);
+    --chart-3: oklch(0.80 0.16 76);
+    --chart-4: oklch(0.72 0.22 18);
+    --chart-5: oklch(0.66 0.012 270);
+
+    --sidebar: oklch(0.155 0.008 270);
+    --sidebar-foreground: oklch(0.96 0.005 95);
+    --sidebar-primary: oklch(0.85 0.22 124);
+    --sidebar-primary-foreground: oklch(0.14 0.04 130);
+    --sidebar-accent: oklch(0.235 0.012 270);
+    --sidebar-accent-foreground: oklch(0.96 0.005 95);
+    --sidebar-border: oklch(1 0 0 / 8%);
+    --sidebar-ring: oklch(0.78 0.18 124);
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+    * {
+        @apply border-border outline-ring/50;
     }
-  body {
-    @apply bg-background text-foreground;
+
+    html {
+        @apply font-sans;
+        font-feature-settings: "ss01", "ss02", "cv11";
+        font-variant-ligatures: common-ligatures;
     }
-  html {
-    @apply font-sans;
+
+    body {
+        background-color: var(--background);
+        color: var(--foreground);
+        background-image:
+            radial-gradient(circle at 1px 1px,
+                color-mix(in oklch, var(--foreground) 7%, transparent) 1px,
+                transparent 0);
+        background-size: 22px 22px;
+        background-position: 0 0;
+        background-attachment: fixed;
+    }
+
+    .dark body {
+        background-image:
+            radial-gradient(circle at 1px 1px,
+                color-mix(in oklch, var(--foreground) 5%, transparent) 1px,
+                transparent 0);
+    }
+
+    /* Tabular numerals everywhere by default — a real data tool */
+    .tabular,
+    [class*="tabular"] {
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Custom utilities
+   ────────────────────────────────────────────────────────────────────────── */
+@utility font-mono {
+    font-family: var(--font-mono);
+    font-feature-settings: "calt", "liga", "ss02";
+}
+
+@utility text-mono-xs {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+}
+
+@utility text-display {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+}
+
+@utility hairline {
+    border-color: var(--hairline);
+}
+
+@utility surface-panel {
+    background-color: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: calc(var(--radius));
+}
+
+/* Animations: orchestrated reveal on first load */
+@keyframes operator-rise {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes operator-fade {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes operator-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        box-shadow: 0 0 0 0 currentColor;
+    }
+
+    50% {
+        opacity: 0.65;
+        box-shadow: 0 0 0 4px transparent;
+    }
+}
+
+@keyframes operator-scan {
+    from {
+        background-position: 0 0;
+    }
+
+    to {
+        background-position: 0 22px;
+    }
+}
+
+@utility animate-rise {
+    animation: operator-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+@utility animate-fade {
+    animation: operator-fade 0.6s ease-out backwards;
+}
+
+@utility animate-pulse-dot {
+    animation: operator-pulse 1.6s ease-in-out infinite;
+}
+
+/* Dotted/grid pattern utilities for panels */
+@utility bg-grid {
+    background-image:
+        linear-gradient(to right, color-mix(in oklch, var(--foreground) 5%, transparent) 1px, transparent 1px),
+        linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 5%, transparent) 1px, transparent 1px);
+    background-size: 32px 32px;
+}
+
+/* Status dot — the operator console signature */
+@utility status-dot {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    box-shadow: 0 0 0 2px color-mix(in oklch, currentColor 18%, transparent);
+}
+
+/* Scrollbar — thin, monochrome, only on hover */
+@layer base {
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: color-mix(in oklch, var(--foreground) 18%, transparent) transparent;
+    }
+
+    *::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    *::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    *::-webkit-scrollbar-thumb {
+        background-color: color-mix(in oklch, var(--foreground) 14%, transparent);
+        border-radius: 4px;
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+        background-color: color-mix(in oklch, var(--foreground) 28%, transparent);
+    }
+
+    /* Selection */
+    ::selection {
+        background-color: color-mix(in oklch, var(--signal) 50%, transparent);
+        color: var(--foreground);
     }
 }

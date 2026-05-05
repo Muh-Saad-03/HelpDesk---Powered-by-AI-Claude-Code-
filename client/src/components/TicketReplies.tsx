@@ -40,7 +40,7 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 });
 
 const TEXTAREA_CLASS =
-	"w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20";
+	"w-full min-w-0 rounded-md border hairline bg-surface px-3 py-2.5 text-sm leading-relaxed transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20";
 
 export function TicketReplies({ ticket }: { ticket: Ticket }) {
 	const queryClient = useQueryClient();
@@ -119,10 +119,20 @@ export function TicketReplies({ ticket }: { ticket: Ticket }) {
 	const isReplyEmpty = watch("body").trim().length === 0;
 
 	return (
-		<section className='mt-8'>
-			<h2 className='mb-3 text-sm font-medium text-muted-foreground'>
-				Replies
-			</h2>
+		<section className='mt-10'>
+			<div className='mb-4 flex items-center gap-3'>
+				<span className='font-mono text-[10px] tracking-widest uppercase text-muted-foreground'>
+					Thread
+				</span>
+				<span aria-hidden className='h-px flex-1 bg-hairline' />
+				{!repliesQuery.isPending &&
+					!repliesQuery.isError &&
+					repliesQuery.data && (
+						<span className='font-mono text-[10px] tabular-nums text-muted-foreground'>
+							{repliesQuery.data.length} {repliesQuery.data.length === 1 ? "reply" : "replies"}
+						</span>
+					)}
+			</div>
 
 			{repliesQuery.isPending ? (
 				<TicketDetailSkeleton />
@@ -133,36 +143,54 @@ export function TicketReplies({ ticket }: { ticket: Ticket }) {
 					</AlertDescription>
 				</Alert>
 			) : repliesQuery.data.length === 0 ? (
-				<p className='text-sm text-muted-foreground'>No replies yet.</p>
+				<p className='font-mono text-[10px] tracking-widest uppercase text-muted-foreground'>
+					No replies yet.
+				</p>
 			) : (
-				<ol className='space-y-3'>
+				<ol className='relative space-y-4'>
+					<span
+						aria-hidden
+						className='pointer-events-none absolute top-3 bottom-3 left-[14px] w-px bg-hairline'
+					/>
 					{repliesQuery.data.map((reply) => {
 						const isAgent = reply.senderType === SenderType.AGENT;
+						const author = replyAuthorLabel(reply, ticket);
 						return (
-							<li
-								key={reply.id}
-								className='rounded-lg border bg-card p-4 text-sm'>
-								<div className='mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1'>
-									<div className='flex items-center gap-2'>
-										<span className='font-medium'>
-											{replyAuthorLabel(reply, ticket)}
-										</span>
-										<span
-											className={
-												isAgent
-													? "rounded-full border border-primary/30 bg-primary/5 px-2 py-0.5 text-xs text-primary"
-													: "rounded-full border bg-muted px-2 py-0.5 text-xs text-muted-foreground"
-											}>
-											{isAgent ? "Agent" : "Customer"}
-										</span>
-									</div>
-									<time
-										dateTime={reply.createdAt}
-										className='text-xs text-muted-foreground'>
-										{dateFormatter.format(new Date(reply.createdAt))}
-									</time>
+							<li key={reply.id} className='relative flex gap-3'>
+								<div
+									className={
+										"relative z-10 grid size-7 shrink-0 place-items-center rounded-full font-mono text-[10px] font-semibold tracking-wide ring-2 ring-background " +
+										(isAgent
+											? "bg-foreground text-background"
+											: "bg-muted text-foreground")
+									}>
+									{author.slice(0, 2).toUpperCase()}
 								</div>
-								<div className='whitespace-pre-wrap'>{reply.body}</div>
+								<div className='surface-panel min-w-0 flex-1 overflow-hidden text-sm'>
+									<div className='flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b hairline px-4 py-2'>
+										<div className='flex items-center gap-2'>
+											<span className='font-medium'>{author}</span>
+											<span aria-hidden className='text-muted-foreground/40'>·</span>
+											<span
+												className={
+													"font-mono text-[9px] tracking-widest uppercase " +
+													(isAgent
+														? "text-foreground"
+														: "text-muted-foreground")
+												}>
+												{isAgent ? "Agent" : "Customer"}
+											</span>
+										</div>
+										<time
+											dateTime={reply.createdAt}
+											className='font-mono text-[10px] tabular-nums text-muted-foreground'>
+											{dateFormatter.format(new Date(reply.createdAt))}
+										</time>
+									</div>
+									<div className='whitespace-pre-wrap px-4 py-3 leading-relaxed'>
+										{reply.body}
+									</div>
+								</div>
 							</li>
 						);
 					})}
@@ -172,13 +200,23 @@ export function TicketReplies({ ticket }: { ticket: Ticket }) {
 			<form
 				onSubmit={onSubmit}
 				noValidate
-				className='mt-6'>
+				className='mt-8'>
+				<div className='mb-3 flex items-center gap-3'>
+					<span className='font-mono text-[10px] tracking-widest uppercase text-muted-foreground'>
+						Compose
+					</span>
+					<span aria-hidden className='h-px flex-1 bg-hairline' />
+				</div>
 				<Controller
 					name='body'
 					control={control}
 					render={({ field, fieldState }) => (
 						<Field data-invalid={fieldState.invalid}>
-							<FieldLabel htmlFor='reply-body'>Add a reply</FieldLabel>
+							<FieldLabel
+								htmlFor='reply-body'
+								className='sr-only'>
+								Add a reply
+							</FieldLabel>
 							<textarea
 								{...field}
 								id='reply-body'

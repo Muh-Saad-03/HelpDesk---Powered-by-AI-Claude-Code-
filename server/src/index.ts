@@ -1,11 +1,16 @@
 /** @format */
 
+// Sentry init must run before any other import so its auto-instrumentation
+// (http, express, etc.) can wrap the modules as they're loaded.
+import "./instrument.ts";
+
 import express, {
 	type Request,
 	type Response,
 	type NextFunction,
 } from "express";
 import cors from "cors";
+import * as Sentry from "@sentry/bun";
 import { toNodeHandler } from "better-auth/node";
 import { prisma } from "./db.ts";
 import { auth } from "./auth.ts";
@@ -41,6 +46,12 @@ app.get("/api/db/health", async (_req: Request, res: Response) => {
 app.use("/api/users", usersRouter);
 app.use("/api/email", emailRouter);
 app.use("/api/tickets", ticketsRouter);
+
+// Sentry's Express error handler — captures anything that bubbles out of a
+// route handler. Must come AFTER all routes and BEFORE our own error
+// middleware. No-op when SENTRY_DSN is unset (init was skipped).
+
+Sentry.setupExpressErrorHandler(app);
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 	console.error(err);

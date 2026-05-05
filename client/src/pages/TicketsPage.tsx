@@ -11,12 +11,11 @@ import {
 	type PageSizeOption,
 	type TicketSortField,
 } from "core";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { NavBar } from "../components/NavBar";
 import { CATEGORY_OPTIONS, STATUS_OPTIONS } from "../components/ticket-fields";
 import { TicketsTable, type TicketRow } from "../components/TicketsTable";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SELECT_CLASS } from "@/lib/utils";
 
@@ -33,17 +32,13 @@ const DEFAULT_PAGE_SIZE: PageSizeOption = 10;
 export function TicketsPage() {
 	const [sorting, setSorting] = useState<SortingState>(DEFAULT_SORTING);
 	const [statusFilter, setStatusFilter] = useState<TicketStatus | "">("");
-	const [categoryFilter, setCategoryFilter] = useState<TicketCategory | "">(
-		"",
-	);
+	const [categoryFilter, setCategoryFilter] = useState<TicketCategory | "">("");
 	const [searchInput, setSearchInput] = useState("");
 	const [searchQuery, setSearchQuery] = useState("");
 	const [page, setPage] = useState(1);
 	const [pageSize, setPageSize] = useState<PageSizeOption>(DEFAULT_PAGE_SIZE);
 
 	useEffect(() => {
-		// Debounced search: when typing settles, push to the query AND reset to
-		// the first page so the user doesn't end up on a stale empty page.
 		const handle = setTimeout(() => {
 			setSearchQuery(searchInput.trim());
 			setPage(1);
@@ -105,8 +100,6 @@ export function TicketsPage() {
 			});
 			return res.data;
 		},
-		// Keep the previous page visible while fetching the next one — avoids a
-		// loading flash on every Prev/Next click.
 		placeholderData: keepPreviousData,
 	});
 
@@ -123,25 +116,47 @@ export function TicketsPage() {
 	return (
 		<>
 			<NavBar />
-			<main className='mx-auto max-w-6xl p-8'>
-				<div className='mb-6 flex items-center justify-between gap-4'>
-					<h1 className='text-2xl font-semibold tracking-tight'>Tickets</h1>
+			<main className='mx-auto max-w-7xl px-5 pt-8 pb-24 sm:px-8 lg:px-12'>
+				{/* Header */}
+				<div className='mb-8 flex flex-wrap items-end justify-between gap-6 animate-rise'>
+					<div>
+						<span className='font-mono text-[10px] tracking-[0.22em] uppercase text-muted-foreground'>
+							── Section 02 / Queue
+						</span>
+						<h1 className='mt-3 text-4xl font-semibold tracking-tight text-display sm:text-[2.75rem]'>
+							Tickets
+							{!isPending && (
+								<span className='ml-3 font-mono text-2xl font-medium tabular-nums text-muted-foreground/60'>
+									{total.toLocaleString()}
+								</span>
+							)}
+						</h1>
+					</div>
+					<div className='flex items-center gap-3 font-mono text-[10px] tracking-widest uppercase text-muted-foreground'>
+						<span>Sort</span>
+						<span className='text-foreground'>{sortBy}</span>
+						<span aria-hidden className='h-3 w-px bg-border' />
+						<span>{sortOrder === "desc" ? "↓" : "↑"}</span>
+					</div>
 				</div>
 
-				<div className='mb-6 flex flex-wrap items-center gap-3'>
-					<div className='relative max-w-xs flex-1'>
-						<Search className='pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground' />
+				{/* Filter bar — bordered toolbar */}
+				<div className='mb-6 flex flex-wrap items-center gap-2 rounded-lg border hairline bg-surface px-3 py-2.5 animate-rise'
+					style={{ animationDelay: "120ms" }}>
+					<div className='relative max-w-xs flex-1 min-w-[180px]'>
+						<Search className='pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground' />
 						<Input
 							type='search'
-							placeholder='Search subject or sender'
-							className='pl-8'
+							placeholder='Search subject or sender…'
+							className='h-8 border-0 bg-transparent pl-7 font-mono text-[12px] focus-visible:ring-0'
 							value={searchInput}
 							onChange={(e) => setSearchInput(e.target.value)}
 							aria-label='Search tickets'
 						/>
 					</div>
-					<label className='flex items-center gap-2 text-xs font-medium text-muted-foreground'>
-						Status
+					<span aria-hidden className='h-5 w-px bg-border' />
+					<label className='flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase text-muted-foreground'>
+						<span>Status</span>
 						<select
 							className={SELECT_CLASS}
 							value={statusFilter}
@@ -151,16 +166,14 @@ export function TicketsPage() {
 							aria-label='Filter by status'>
 							<option value=''>All</option>
 							{STATUS_OPTIONS.map((opt) => (
-								<option
-									key={opt.value}
-									value={opt.value}>
+								<option key={opt.value} value={opt.value}>
 									{opt.label}
 								</option>
 							))}
 						</select>
 					</label>
-					<label className='flex items-center gap-2 text-xs font-medium text-muted-foreground'>
-						Category
+					<label className='flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase text-muted-foreground'>
+						<span>Category</span>
 						<select
 							className={SELECT_CLASS}
 							value={categoryFilter}
@@ -170,28 +183,27 @@ export function TicketsPage() {
 							aria-label='Filter by category'>
 							<option value=''>All</option>
 							{CATEGORY_OPTIONS.map((opt) => (
-								<option
-									key={opt.value}
-									value={opt.value}>
+								<option key={opt.value} value={opt.value}>
 									{opt.label}
 								</option>
 							))}
 						</select>
 					</label>
-					{hasActiveFilters ? (
-						<Button
+					{hasActiveFilters && (
+						<button
 							type='button'
-							size='xs'
-							variant='ghost'
+							aria-label='Clear filters'
 							onClick={() => {
 								setStatusFilter("");
 								setCategoryFilter("");
 								setSearchInput("");
 								setPage(1);
-							}}>
-							Clear filters
-						</Button>
-					) : null}
+							}}
+							className='ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 font-mono text-[10px] tracking-widest uppercase text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'>
+							<X className='size-3' />
+							Clear
+						</button>
+					)}
 				</div>
 
 				{isError ? (
@@ -201,38 +213,51 @@ export function TicketsPage() {
 						</AlertDescription>
 					</Alert>
 				) : isPending ? (
-					<TicketsTable
-						tickets={undefined}
-						sorting={sorting}
-						onSortingChange={handleSortingChange}
-					/>
-				) : tickets && tickets.length === 0 ? (
-					<p className='text-muted-foreground'>
-						{hasActiveFilters
-							? "No tickets match the current filters."
-							: "No tickets yet."}
-					</p>
-				) : (
-					<>
+					<div className='surface-panel overflow-hidden'>
 						<TicketsTable
-							tickets={tickets}
+							tickets={undefined}
 							sorting={sorting}
 							onSortingChange={handleSortingChange}
 						/>
+					</div>
+				) : tickets && tickets.length === 0 ? (
+					<div className='surface-panel grid place-items-center px-8 py-24 text-center'>
+						<div>
+							<div className='mx-auto mb-4 size-12 rounded-md border-2 border-dashed border-foreground/20' />
+							<p className='text-[14px] font-medium'>
+								{hasActiveFilters
+									? "No tickets match the current filters."
+									: "No tickets yet."}
+							</p>
+							<p className='mt-1 font-mono text-[10px] tracking-widest uppercase text-muted-foreground'>
+								{hasActiveFilters ? "Try clearing filters" : "All clear"}
+							</p>
+						</div>
+					</div>
+				) : (
+					<>
+						<div className='surface-panel overflow-hidden animate-rise'
+							style={{ animationDelay: "200ms" }}>
+							<TicketsTable
+								tickets={tickets}
+								sorting={sorting}
+								onSortingChange={handleSortingChange}
+							/>
+						</div>
 
 						<div
 							className={
-								"mt-4 flex flex-wrap items-center justify-between gap-3 text-sm " +
+								"mt-4 flex flex-wrap items-center justify-between gap-3 " +
 								(isPlaceholderData ? "opacity-60" : "")
 							}>
-							<div className='text-muted-foreground'>
+							<div className='font-mono text-[11px] tabular-nums text-muted-foreground'>
 								{total === 0
 									? "No results"
 									: `Showing ${startIndex}–${endIndex} of ${total}`}
 							</div>
 							<div className='flex items-center gap-3'>
-								<label className='flex items-center gap-2 text-xs text-muted-foreground'>
-									Per page
+								<label className='flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase text-muted-foreground'>
+									<span>Per page</span>
 									<select
 										className={SELECT_CLASS}
 										value={pageSize}
@@ -243,38 +268,34 @@ export function TicketsPage() {
 										}
 										aria-label='Rows per page'>
 										{PAGE_SIZE_OPTIONS.map((n) => (
-											<option
-												key={n}
-												value={n}>
+											<option key={n} value={n}>
 												{n}
 											</option>
 										))}
 									</select>
 								</label>
-								<div className='flex items-center gap-2'>
-									<Button
+								<div className='inline-flex items-center rounded-md border hairline bg-surface'>
+									<button
 										type='button'
-										size='icon-sm'
-										variant='outline'
 										aria-label='Previous page'
 										disabled={page <= 1}
-										onClick={() => setPage((p) => Math.max(1, p - 1))}>
-										<ChevronLeft className='size-4' />
-									</Button>
-									<span className='text-muted-foreground'>
-										Page {page} of {totalPages}
+										onClick={() => setPage((p) => Math.max(1, p - 1))}
+										className='grid size-7 place-items-center rounded-l-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40'>
+										<ChevronLeft className='size-3.5' />
+									</button>
+									<span className='border-x hairline px-3 font-mono text-[11px] tabular-nums text-foreground'>
+										{`Page ${page} of ${totalPages}`}
 									</span>
-									<Button
+									<button
 										type='button'
-										size='icon-sm'
-										variant='outline'
 										aria-label='Next page'
 										disabled={page >= totalPages}
 										onClick={() =>
 											setPage((p) => Math.min(totalPages, p + 1))
-										}>
-										<ChevronRight className='size-4' />
-									</Button>
+										}
+										className='grid size-7 place-items-center rounded-r-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40'>
+										<ChevronRight className='size-3.5' />
+									</button>
 								</div>
 							</div>
 						</div>
