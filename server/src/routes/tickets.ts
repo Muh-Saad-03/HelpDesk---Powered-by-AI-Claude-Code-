@@ -6,6 +6,7 @@ import {
 	polishReplySchema,
 	Role,
 	SenderType,
+	TicketStatus,
 	ticketsListQuerySchema,
 	updateTicketSchema,
 } from "core";
@@ -54,13 +55,26 @@ ticketsRouter.get(
 		const { sortBy, sortOrder, status, category, q, page, pageSize } =
 			parsed.data;
 
+		// Tickets in NEW / PROCESSING are still being handled by the AI
+		// auto-resolve worker. Hide them from the agent list regardless of
+		// the caller's status filter — agents shouldn't see half-handled
+		// tickets, and once the worker finishes they'll surface as RESOLVED
+		// or OPEN.
+		const AI_HIDDEN_STATUSES: TicketStatus[] = [
+			TicketStatus.NEW,
+			TicketStatus.PROCESSING,
+		];
+		const visibleStatuses =
+			status && status.length > 0 ?
+				status.filter((s) => !AI_HIDDEN_STATUSES.includes(s))
+			:	[TicketStatus.OPEN, TicketStatus.RESOLVED, TicketStatus.CLOSED];
+
 		type Where = {
-			status?: { in: typeof status };
+			status: { in: TicketStatus[] };
 			category?: { in: typeof category };
 			OR?: { [k: string]: { contains: string; mode: "insensitive" } }[];
 		};
-		const where: Where = {};
-		if (status && status.length > 0) where.status = { in: status };
+		const where: Where = { status: { in: visibleStatuses } };
 		if (category && category.length > 0) where.category = { in: category };
 		if (q) {
 			where.OR = [

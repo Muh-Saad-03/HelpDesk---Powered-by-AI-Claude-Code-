@@ -2,6 +2,7 @@
 
 import { generateObject, generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
 import { SenderType, TicketCategory } from "core";
 
 const POLISH_SYSTEM_PROMPT = `You are a customer support agent's writing assistant.
@@ -184,4 +185,112 @@ export async function classifyTicketCategory(
 		},
 	});
 	return object as TicketCategory;
+}
+
+const AUTO_RESOLVE_SYSTEM_PROMPT = `You are an automated first-line support
+agent. You will be given a customer's ticket and a knowledge base. Decide
+whether the ticket can be fully and confidently resolved using ONLY the
+information in the knowledge base, and if so, write the customer reply.
+
+Output:
+- canResolve: true ONLY if the knowledge base directly answers the customer's
+  specific question and you can produce a complete, accurate reply from it.
+  false otherwise.
+- reply: when canResolve is true, the full customer-facing reply text. When
+  canResolve is false, return an empty string.
+
+Hard rules — set canResolve to false (escalate to a human) when ANY of these
+apply, even if the KB seems related:
+- The knowledge base has an "Escalation Rules" section; obey it. In particular,
+  escalate on: legal threats, refund requests outside the policy window,
+  chargeback or payment-dispute mentions, account security concerns, or any
+  case where confidence is low.
+- The customer is asking for a human action (account changes, manual refund,
+  email-address changes, etc.) that requires staff.
+- The KB doesn't directly cover the situation, or you'd need to guess.
+- The ticket is ambiguous, mixed-intent, or needs clarifying questions.
+
+Reply style (when canResolve is true):
+- Open with "Dear {first name}," using ONLY the customer's first name. If the
+  customer's full name has multiple words, use the first one only (e.g. for
+  "Alice Cooper" write "Dear Alice,"). If no name is provided, open with
+  "Hello,".
+- Leave a blank line after the greeting, between paragraphs, and before the
+  sign-off. Keep paragraphs short (1–3 sentences).
+- Acknowledge what the customer asked in the first sentence so the reply
+  doesn't read like a form letter.
+- When the answer is procedural (multiple steps), use a numbered list with
+  each step on its own line ("1. ...", "2. ..."). When it's a single piece
+  of information, use plain prose. Never use markdown headings, bold, or
+  bullet symbols ("-", "*").
+- Total length: 2 to 6 short sentences (or up to ~6 numbered steps for
+  procedural answers). No filler, no apologies for things that don't apply.
+- Ground every claim in the knowledge base. Do not invent policies, prices,
+  dates, links, contact addresses, or commitments.
+- Tone: warm, professional, customer-friendly. Plain English. No jargon. Do
+  not refer to yourself as an AI or to the knowledge base.
+- Reply in the same language the customer is writing in.
+- End with exactly two lines: "Best regards," on one line, then
+  "Saad Support" on the next. Nothing after that — no extra signature,
+  contact info, or disclaimer.`;
+
+export type AutoResolveContext = {
+	subject: string;
+	customerName: string | null;
+	customerEmail: string;
+	body: string;
+	knowledgeBase: string;
+};
+
+export type AutoResolveResult = {
+	canResolve: boolean;
+	reply: string;
+};
+
+const autoResolveSchema = z.object({
+	canResolve: z
+		.boolean()
+		.describe(
+			"True only if the knowledge base directly resolves the ticket and you have produced a complete reply. False otherwise.",
+		),
+	reply: z
+		.string()
+		.describe(
+			"The full customer-facing reply text when canResolve is true, otherwise an empty string.",
+		),
+});
+
+function buildAutoResolvePrompt(ctx: AutoResolveContext): string {
+	return [
+		"Knowledge base:",
+		"```",
+		ctx.knowledgeBase,
+		"```",
+		"",
+		`Subject: ${ctx.subject}`,
+		`Customer: ${formatCustomer(ctx)}`,
+		"",
+		"Customer's message:",
+		ctx.body,
+		"",
+		"Decide whether you can resolve this ticket from the knowledge base alone, and if so, write the reply.",
+	].join("\n");
+}
+
+export async function autoResolveTicket(
+	ctx: AutoResolveContext,
+): Promise<AutoResolveResult> {
+	const { object } = await generateObject({
+		model: openai("gpt-5-nano"),
+		schema: autoResolveSchema,
+		system: AUTO_RESOLVE_SYSTEM_PROMPT,
+		prompt: buildAutoResolvePrompt(ctx),
+		providerOptions: {
+			openai: { reasoningEffort: "low" },
+		},
+	});
+	return {
+		canResolve: object.canResolve && object.reply.trim().length > 0,
+		reply: object.reply.trim(),
+	};
 }

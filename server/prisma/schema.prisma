@@ -84,6 +84,8 @@ model Verification {
 // ---- Domain ----
 
 enum TicketStatus {
+  NEW
+  PROCESSING
   OPEN
   RESOLVED
   CLOSED
@@ -99,7 +101,12 @@ model Ticket {
   id         String          @id @default(cuid())
   subject    String
   body       String
-  status     TicketStatus    @default(OPEN)
+  // New tickets land in NEW. The auto-resolve worker flips them to PROCESSING
+  // while the LLM is consulting the knowledge base, then either RESOLVED (if
+  // the LLM produced a reply) or OPEN (if it gave up — needs a human). NEW +
+  // PROCESSING are hidden from the agent list so half-handled tickets don't
+  // flicker on screen.
+  status     TicketStatus    @default(NEW)
   category   TicketCategory?
   fromEmail  String
   fromName   String?

@@ -4,7 +4,7 @@ import { Router, type Request, type Response } from "express";
 import { timingSafeEqual } from "node:crypto";
 import { TicketStatus, inboundEmailSchema } from "core";
 import { prisma } from "../db.ts";
-import { enqueueClassify } from "../queue.ts";
+import { enqueueAutoResolve, enqueueClassify } from "../queue.ts";
 
 function firstIssueMessage(issues: readonly { message: string }[]): string {
 	return issues[0]?.message ?? "Invalid input";
@@ -58,16 +58,20 @@ emailRouter.post("/inbound", async (req: Request, res: Response) => {
 			body,
 			fromEmail,
 			fromName: fromName ?? null,
-			status: TicketStatus.OPEN,
+			status: TicketStatus.NEW,
 		},
 		select: { id: true },
 	});
 
-	// Enqueue classification on pg-boss so the LLM call runs out-of-band.
-	// The webhook returns 201 immediately; a worker picks the job up and
-	// fills in `ticket.category`. Durable across restarts and retried on
-	// transient failure (default retryLimit = 2).
-	await enqueueClassify(ticket.id);
+	// Run two jobs out-of-band on pg-boss: classification fills in
+	// `ticket.category`, and auto-resolve consults the KB and either posts a
+	// reply + marks the ticket RESOLVED, or releases it to OPEN. The webhook
+	// returns 201 immediately; the ticket stays hidden from the agent list
+	// while it's still in NEW/PROCESSING.
+	await Promise.all([
+		enqueueClassify(ticket.id),
+		enqueueAutoResolve(ticket.id),
+	]);
 
 	res.status(201).json({ ticket });
 });
