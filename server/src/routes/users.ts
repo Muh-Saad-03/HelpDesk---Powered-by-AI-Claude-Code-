@@ -5,6 +5,7 @@ import { Role, createUserSchema, updateUserSchema } from "core";
 import { prisma } from "../db.ts";
 import { auth } from "../auth.ts";
 import { requireRole } from "../middleware/requireRole.ts";
+import { AI_AGENT_EMAIL } from "../aiAgent.ts";
 
 function firstIssueMessage(issues: readonly { message: string }[]): string {
 	return issues[0]?.message ?? "Invalid input";
@@ -17,7 +18,7 @@ usersRouter.get(
 	requireRole(Role.ADMIN),
 	async (_req: Request, res: Response) => {
 		const users = await prisma.user.findMany({
-			where: { deletedAt: null },
+			where: { deletedAt: null, email: { not: AI_AGENT_EMAIL } },
 			select: {
 				id: true,
 				name: true,
@@ -40,7 +41,7 @@ usersRouter.get(
 	requireRole(Role.ADMIN, Role.AGENT),
 	async (_req: Request, res: Response) => {
 		const users = await prisma.user.findMany({
-			where: { deletedAt: null },
+			where: { deletedAt: null, email: { not: AI_AGENT_EMAIL } },
 			select: { id: true, name: true, email: true },
 			orderBy: { name: "asc" },
 		});
