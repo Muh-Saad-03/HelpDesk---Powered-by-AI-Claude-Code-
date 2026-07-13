@@ -52,7 +52,7 @@ type CardSpec = {
   label: string;
   value: string | null;
   hint?: string;
-  emphasis?: "signal" | "default";
+  accent: string;
   trend?: number[];
 };
 
@@ -76,6 +76,7 @@ export function Home() {
       label: "Total tickets",
       value: data ? data.total.toLocaleString() : null,
       hint: "all-time",
+      accent: "bg-primary text-primary",
       trend,
     },
     {
@@ -83,25 +84,28 @@ export function Home() {
       label: "Open tickets",
       value: data ? data.open.toLocaleString() : null,
       hint: "awaiting action",
+      accent: "bg-status-open text-status-open",
     },
     {
       index: "03",
       label: "Resolved by AI",
       value: data ? data.aiResolved.toLocaleString() : null,
       hint: "auto-closed",
-      emphasis: "signal",
+      accent: "bg-signal text-signal",
     },
     {
       index: "04",
       label: "AI resolution rate",
       value: data ? formatPct(data.aiResolvedPct) : null,
       hint: "of resolved",
+      accent: "bg-status-resolved text-status-resolved",
     },
     {
       index: "05",
       label: "Avg resolution",
       value: data ? formatDuration(data.avgResolutionMs) : null,
       hint: "time-to-close",
+      accent: "bg-status-closed text-status-closed",
     },
   ];
 
@@ -140,10 +144,10 @@ export function Home() {
           </Alert>
         ) : (
           <>
-            {/* Stat grid — single bordered shell, internal hairlines */}
+            {/* Stat grid — floating candy cards */}
             <section
               aria-label="Key metrics"
-              className="mb-10 grid grid-cols-1 overflow-hidden rounded-lg border hairline bg-surface sm:grid-cols-2 lg:grid-cols-5"
+              className="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5"
             >
               {cards.map((c, i) => (
                 <MetricTile
@@ -151,7 +155,6 @@ export function Home() {
                   spec={c}
                   loading={isPending}
                   position={i}
-                  total={cards.length}
                 />
               ))}
             </section>
@@ -203,45 +206,27 @@ function MetricTile({
   spec,
   loading,
   position,
-  total,
 }: {
   spec: CardSpec;
   loading: boolean;
   position: number;
-  total: number;
 }) {
-  const isLastCol = (position + 1) % 5 === 0;
-  const isLastRow = position >= total - (total % 5 || 5);
   return (
     <div
-      className={
-        "group/tile relative flex flex-col gap-3 px-5 py-5 animate-fade " +
-        (!isLastCol ? "lg:border-r hairline " : "") +
-        (!isLastRow ? "border-b hairline lg:border-b-0 " : "")
-      }
+      className="group/tile relative flex flex-col gap-3 rounded-2xl bg-surface px-5 py-5 ring-1 ring-foreground/5 shadow-bubble transition-transform hover:-translate-y-0.5 animate-rise"
       style={{ animationDelay: `${position * 60}ms` }}
     >
       <div className="flex items-baseline justify-between gap-2">
         <span className="font-mono text-[9px] tracking-widest uppercase text-muted-foreground">
           {spec.index} · {spec.label}
         </span>
-        {spec.emphasis === "signal" && !loading && (
-          <span
-            aria-hidden
-            className="status-dot bg-signal text-signal"
-          />
-        )}
+        <span aria-hidden className={`status-dot ${spec.accent}`} />
       </div>
       {loading || spec.value === null ? (
         <Skeleton className="h-9 w-24" />
       ) : (
         <div className="flex items-baseline gap-2">
-          <span
-            className={
-              "font-mono text-3xl font-semibold tabular-nums tracking-tight " +
-              (spec.emphasis === "signal" ? "" : "")
-            }
-          >
+          <span className="font-heading text-3xl font-semibold tabular-nums tracking-tight">
             {spec.value}
           </span>
         </div>
@@ -269,7 +254,7 @@ function Sparkline({ data }: { data: number[] }) {
       viewBox={`0 0 ${w} ${h}`}
       width={w}
       height={h}
-      className="text-foreground/50"
+      className="text-primary/60"
       aria-hidden
     >
       <polyline
@@ -337,10 +322,10 @@ function ChartBody({ data }: { data: DailyPoint[] }) {
               >
                 <div
                   className={
-                    "relative w-full transition-all duration-300 " +
+                    "relative w-full rounded-t-full transition-all duration-300 " +
                     (isLast
                       ? "bg-signal group-hover/bar:bg-signal"
-                      : "bg-foreground/65 group-hover/bar:bg-foreground")
+                      : "bg-primary/50 group-hover/bar:bg-primary")
                   }
                   style={{
                     height: `${heightPct}%`,
@@ -350,7 +335,7 @@ function ChartBody({ data }: { data: DailyPoint[] }) {
                 {/* hover tooltip */}
                 <div
                   aria-hidden
-                  className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 translate-y-1 scale-95 whitespace-nowrap rounded-md border hairline bg-surface px-2 py-1 font-mono text-[10px] tracking-wide opacity-0 shadow-sm transition-all group-hover/bar:translate-y-0 group-hover/bar:scale-100 group-hover/bar:opacity-100"
+                  className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 translate-y-1 scale-95 whitespace-nowrap rounded-full border hairline bg-surface px-2.5 py-1 font-mono text-[10px] tracking-wide opacity-0 shadow-bubble transition-all group-hover/bar:translate-y-0 group-hover/bar:scale-100 group-hover/bar:opacity-100"
                 >
                   <span className="text-muted-foreground">
                     {formatShortDate(d.date)}

@@ -73,10 +73,10 @@ export function NavBar() {
                     key={item.to}
                     to={item.to}
                     className={cn(
-                      "group/navitem relative flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] transition-colors",
+                      "group/navitem relative flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] transition-colors",
                       isActive
-                        ? "text-foreground"
-                        : "text-muted-foreground hover:text-foreground",
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
                     )}
                   >
                     <span
@@ -84,19 +84,13 @@ export function NavBar() {
                       className={cn(
                         "font-mono text-[9px] tracking-wider transition-colors",
                         isActive
-                          ? "text-foreground/80"
+                          ? "text-primary/70"
                           : "text-muted-foreground/60",
                       )}
                     >
                       {item.index}
                     </span>
-                    <span className="font-medium">{item.label}</span>
-                    {isActive && (
-                      <span
-                        aria-hidden
-                        className="absolute inset-x-2.5 -bottom-[13px] h-px bg-foreground"
-                      />
-                    )}
+                    <span className="font-semibold">{item.label}</span>
                   </NavLink>
                 );
               })}
@@ -107,16 +101,9 @@ export function NavBar() {
         <div className="ml-auto flex items-center gap-3">
           {session && (
             <>
-              <kbd
-                aria-hidden
-                className="hidden items-center gap-1 rounded-md border hairline bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] tracking-wide text-muted-foreground sm:inline-flex"
-              >
-                <span>⌘</span>
-                <span>K</span>
-              </kbd>
               <div className="flex items-center gap-2.5">
                 <div
-                  className="grid size-7 place-items-center rounded-full bg-foreground font-mono text-[10px] font-semibold tracking-wide text-background"
+                  className="grid size-7 place-items-center rounded-full bg-primary font-mono text-[10px] font-bold tracking-wide text-primary-foreground"
                   aria-hidden
                 >
                   {userInitials}
@@ -133,7 +120,7 @@ export function NavBar() {
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="group/signout inline-flex h-8 items-center gap-1.5 rounded-md border hairline bg-transparent px-2.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+                className="group/signout inline-flex h-8 items-center gap-1.5 rounded-full border hairline bg-transparent px-3 text-[12px] font-semibold text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
                 aria-label="Sign out"
               >
                 <LogOut className="size-3.5" />
@@ -151,16 +138,16 @@ function BrandMark() {
   return (
     <div
       aria-hidden
-      className="relative grid size-8 place-items-center rounded-md bg-foreground"
+      className="relative grid size-8 place-items-center rounded-2xl bg-primary shadow-bubble"
     >
       {/* a tiny "command/queue" glyph */}
       <svg
         viewBox="0 0 16 16"
-        className="size-4 text-background"
+        className="size-4 text-primary-foreground"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="square"
+        strokeWidth="1.8"
+        strokeLinecap="round"
       >
         <path d="M3 5h10" />
         <path d="M3 8h6" />

@@ -63,19 +63,23 @@ export function LoginPage() {
 				/>
 				<div
 					aria-hidden
-					className="pointer-events-none absolute -top-40 -left-40 size-[40rem] rounded-full bg-signal/8 blur-3xl"
+					className="pointer-events-none absolute -top-40 -left-40 size-[40rem] rounded-full bg-primary/10 blur-3xl"
+				/>
+				<div
+					aria-hidden
+					className="pointer-events-none absolute -right-32 -bottom-32 size-[32rem] rounded-full bg-status-resolved/10 blur-3xl"
 				/>
 
 				<div className="relative flex h-full flex-col justify-between p-12 xl:p-16">
 					<div className="flex items-center gap-3">
-						<div className="relative grid size-9 place-items-center rounded-md bg-foreground">
+						<div className="relative grid size-9 place-items-center rounded-2xl bg-primary shadow-bubble">
 							<svg
 								viewBox="0 0 16 16"
-								className="size-5 text-background"
+								className="size-5 text-primary-foreground"
 								fill="none"
 								stroke="currentColor"
-								strokeWidth="1.6"
-								strokeLinecap="square">
+								strokeWidth="1.8"
+								strokeLinecap="round">
 								<path d="M3 5h10" />
 								<path d="M3 8h6" />
 								<path d="M3 11h10" />
@@ -107,7 +111,7 @@ export function LoginPage() {
 							by you.
 						</p>
 
-						<dl className="mt-10 grid grid-cols-3 gap-px overflow-hidden rounded-md border hairline bg-hairline">
+						<dl className="mt-10 grid grid-cols-3 gap-px overflow-hidden rounded-2xl border hairline bg-hairline shadow-bubble">
 							{[
 								{ k: "Avg first reply", v: "2.4m" },
 								{ k: "AI assist rate", v: "61%" },
@@ -142,13 +146,14 @@ export function LoginPage() {
 				<div className="w-full max-w-sm animate-rise">
 					{/* mobile brand */}
 					<div className="mb-10 flex items-center gap-2.5 lg:hidden">
-						<div className="relative grid size-8 place-items-center rounded-md bg-foreground">
+						<div className="relative grid size-8 place-items-center rounded-2xl bg-primary shadow-bubble">
 							<svg
 								viewBox="0 0 16 16"
-								className="size-4 text-background"
+								className="size-4 text-primary-foreground"
 								fill="none"
 								stroke="currentColor"
-								strokeWidth="1.6">
+								strokeWidth="1.8"
+								strokeLinecap="round">
 								<path d="M3 5h10" />
 								<path d="M3 8h6" />
 								<path d="M3 11h10" />
@@ -235,7 +240,7 @@ export function LoginPage() {
 							<button
 								type='submit'
 								disabled={isSubmitting}
-								className="group/submit relative inline-flex h-11 items-center justify-center gap-2 overflow-hidden rounded-md bg-foreground px-4 text-[13px] font-medium text-background transition-all hover:bg-foreground/90 disabled:opacity-60 active:translate-y-px">
+								className="group/submit relative inline-flex h-11 items-center justify-center gap-2 overflow-hidden rounded-full bg-primary px-4 text-[13px] font-semibold text-primary-foreground shadow-bubble transition-all hover:bg-primary/90 disabled:opacity-60 active:translate-y-px">
 								<span className="font-mono text-[10px] tracking-widest uppercase opacity-60">
 									{isSubmitting ? "···" : "↵"}
 								</span>

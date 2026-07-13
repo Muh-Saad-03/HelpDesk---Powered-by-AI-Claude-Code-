@@ -1,15 +1,15 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
-@import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource-variable/baloo-2";
+@import "@fontsource-variable/nunito";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
-    --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
-    --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, monospace;
+    --font-heading: 'Baloo 2 Variable', ui-rounded, ui-sans-serif, system-ui, sans-serif;
+    --font-sans: 'Nunito Variable', ui-rounded, ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'Nunito Variable', ui-rounded, ui-sans-serif, system-ui, sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -61,114 +61,114 @@
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Operator's Console — light (warm paper, ink, signal-lime accent)
+   Bubble Pop — light (marshmallow blush, bubblegum berry, pastel candy)
    ────────────────────────────────────────────────────────────────────────── */
 :root {
-    --background: oklch(0.985 0.004 95);
-    --foreground: oklch(0.18 0.012 275);
-    --surface: oklch(1 0 0);
-    --surface-2: oklch(0.965 0.005 95);
-    --hairline: oklch(0.91 0.005 90);
+    --background: oklch(0.977 0.012 330);
+    --foreground: oklch(0.33 0.06 330);
+    --surface: oklch(0.995 0.005 330);
+    --surface-2: oklch(0.955 0.022 330);
+    --hairline: oklch(0.905 0.032 330);
 
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.18 0.012 275);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.18 0.012 275);
+    --card: oklch(0.995 0.005 330);
+    --card-foreground: oklch(0.33 0.06 330);
+    --popover: oklch(0.995 0.005 330);
+    --popover-foreground: oklch(0.33 0.06 330);
 
-    /* Primary stays ink — the lime is reserved for the signal accent */
-    --primary: oklch(0.20 0.012 275);
-    --primary-foreground: oklch(0.985 0.004 95);
+    /* Bubblegum berry — the star of the show */
+    --primary: oklch(0.62 0.21 350);
+    --primary-foreground: oklch(0.99 0.005 330);
 
-    --secondary: oklch(0.965 0.005 95);
-    --secondary-foreground: oklch(0.20 0.012 275);
-    --muted: oklch(0.965 0.005 95);
-    --muted-foreground: oklch(0.50 0.012 270);
-    --accent: oklch(0.965 0.005 95);
-    --accent-foreground: oklch(0.20 0.012 275);
+    --secondary: oklch(0.935 0.038 310);
+    --secondary-foreground: oklch(0.38 0.09 320);
+    --muted: oklch(0.948 0.022 330);
+    --muted-foreground: oklch(0.55 0.05 330);
+    --accent: oklch(0.93 0.05 55);
+    --accent-foreground: oklch(0.40 0.09 45);
 
-    /* The signature: a sharp electric chartreuse used surgically */
-    --signal: oklch(0.86 0.20 122);
-    --signal-foreground: oklch(0.16 0.04 130);
+    /* Sunny apricot accent */
+    --signal: oklch(0.85 0.13 70);
+    --signal-foreground: oklch(0.36 0.09 55);
 
-    --destructive: oklch(0.58 0.22 27);
-    --border: oklch(0.91 0.005 90);
-    --input: oklch(0.91 0.005 90);
-    --ring: oklch(0.74 0.16 124);
+    --destructive: oklch(0.62 0.19 25);
+    --border: oklch(0.905 0.032 330);
+    --input: oklch(0.885 0.035 330);
+    --ring: oklch(0.72 0.15 350);
 
-    /* Status semantics — dot/border colors */
-    --status-new: oklch(0.78 0.16 76);          /* amber  */
-    --status-open: oklch(0.62 0.18 250);        /* steel blue */
-    --status-resolved: oklch(0.74 0.18 142);    /* signal-lime/green family */
-    --status-closed: oklch(0.62 0.012 270);     /* slate */
-    --status-breach: oklch(0.65 0.24 18);       /* magenta-red */
+    /* Status semantics — candy pastels */
+    --status-new: oklch(0.78 0.13 65);          /* apricot */
+    --status-open: oklch(0.68 0.14 240);        /* bubble sky */
+    --status-resolved: oklch(0.74 0.14 160);    /* fresh mint */
+    --status-closed: oklch(0.65 0.04 300);      /* lavender grey */
+    --status-breach: oklch(0.66 0.21 20);       /* strawberry */
 
-    --chart-1: oklch(0.74 0.18 142);
-    --chart-2: oklch(0.62 0.18 250);
-    --chart-3: oklch(0.78 0.16 76);
-    --chart-4: oklch(0.65 0.24 18);
-    --chart-5: oklch(0.50 0.012 270);
+    --chart-1: oklch(0.74 0.14 160);
+    --chart-2: oklch(0.68 0.14 240);
+    --chart-3: oklch(0.78 0.13 65);
+    --chart-4: oklch(0.66 0.21 20);
+    --chart-5: oklch(0.65 0.04 300);
 
-    --radius: 0.5rem;
-    --sidebar: oklch(0.985 0.004 95);
-    --sidebar-foreground: oklch(0.18 0.012 275);
-    --sidebar-primary: oklch(0.20 0.012 275);
-    --sidebar-primary-foreground: oklch(0.985 0.004 95);
-    --sidebar-accent: oklch(0.965 0.005 95);
-    --sidebar-accent-foreground: oklch(0.20 0.012 275);
-    --sidebar-border: oklch(0.91 0.005 90);
-    --sidebar-ring: oklch(0.74 0.16 124);
+    --radius: 1.15rem;
+    --sidebar: oklch(0.977 0.012 330);
+    --sidebar-foreground: oklch(0.33 0.06 330);
+    --sidebar-primary: oklch(0.62 0.21 350);
+    --sidebar-primary-foreground: oklch(0.99 0.005 330);
+    --sidebar-accent: oklch(0.935 0.038 310);
+    --sidebar-accent-foreground: oklch(0.38 0.09 320);
+    --sidebar-border: oklch(0.905 0.032 330);
+    --sidebar-ring: oklch(0.72 0.15 350);
 }
 
 .dark {
-    --background: oklch(0.155 0.008 270);
-    --foreground: oklch(0.96 0.005 95);
-    --surface: oklch(0.195 0.010 270);
-    --surface-2: oklch(0.225 0.012 270);
-    --hairline: oklch(0.30 0.012 270);
+    --background: oklch(0.235 0.035 315);
+    --foreground: oklch(0.95 0.015 330);
+    --surface: oklch(0.275 0.04 315);
+    --surface-2: oklch(0.315 0.045 315);
+    --hairline: oklch(0.38 0.045 315);
 
-    --card: oklch(0.195 0.010 270);
-    --card-foreground: oklch(0.96 0.005 95);
-    --popover: oklch(0.195 0.010 270);
-    --popover-foreground: oklch(0.96 0.005 95);
+    --card: oklch(0.275 0.04 315);
+    --card-foreground: oklch(0.95 0.015 330);
+    --popover: oklch(0.275 0.04 315);
+    --popover-foreground: oklch(0.95 0.015 330);
 
-    --primary: oklch(0.95 0.005 95);
-    --primary-foreground: oklch(0.16 0.012 270);
+    --primary: oklch(0.78 0.15 350);
+    --primary-foreground: oklch(0.24 0.06 335);
 
-    --secondary: oklch(0.235 0.012 270);
-    --secondary-foreground: oklch(0.96 0.005 95);
-    --muted: oklch(0.225 0.012 270);
-    --muted-foreground: oklch(0.66 0.012 270);
-    --accent: oklch(0.235 0.012 270);
-    --accent-foreground: oklch(0.96 0.005 95);
+    --secondary: oklch(0.34 0.05 315);
+    --secondary-foreground: oklch(0.95 0.015 330);
+    --muted: oklch(0.315 0.045 315);
+    --muted-foreground: oklch(0.73 0.03 320);
+    --accent: oklch(0.36 0.06 40);
+    --accent-foreground: oklch(0.93 0.04 55);
 
-    --signal: oklch(0.85 0.22 124);
-    --signal-foreground: oklch(0.14 0.04 130);
+    --signal: oklch(0.83 0.12 70);
+    --signal-foreground: oklch(0.30 0.08 55);
 
-    --destructive: oklch(0.70 0.20 22);
-    --border: oklch(1 0 0 / 8%);
-    --input: oklch(1 0 0 / 12%);
-    --ring: oklch(0.78 0.18 124);
+    --destructive: oklch(0.70 0.18 22);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 14%);
+    --ring: oklch(0.75 0.14 350);
 
-    --status-new: oklch(0.80 0.16 76);
-    --status-open: oklch(0.70 0.16 250);
-    --status-resolved: oklch(0.80 0.20 142);
-    --status-closed: oklch(0.62 0.012 270);
-    --status-breach: oklch(0.72 0.22 18);
+    --status-new: oklch(0.82 0.12 70);
+    --status-open: oklch(0.74 0.12 240);
+    --status-resolved: oklch(0.79 0.13 160);
+    --status-closed: oklch(0.68 0.035 300);
+    --status-breach: oklch(0.72 0.18 20);
 
-    --chart-1: oklch(0.80 0.20 142);
-    --chart-2: oklch(0.70 0.16 250);
-    --chart-3: oklch(0.80 0.16 76);
-    --chart-4: oklch(0.72 0.22 18);
-    --chart-5: oklch(0.66 0.012 270);
+    --chart-1: oklch(0.79 0.13 160);
+    --chart-2: oklch(0.74 0.12 240);
+    --chart-3: oklch(0.82 0.12 70);
+    --chart-4: oklch(0.72 0.18 20);
+    --chart-5: oklch(0.68 0.035 300);
 
-    --sidebar: oklch(0.155 0.008 270);
-    --sidebar-foreground: oklch(0.96 0.005 95);
-    --sidebar-primary: oklch(0.85 0.22 124);
-    --sidebar-primary-foreground: oklch(0.14 0.04 130);
-    --sidebar-accent: oklch(0.235 0.012 270);
-    --sidebar-accent-foreground: oklch(0.96 0.005 95);
-    --sidebar-border: oklch(1 0 0 / 8%);
-    --sidebar-ring: oklch(0.78 0.18 124);
+    --sidebar: oklch(0.235 0.035 315);
+    --sidebar-foreground: oklch(0.95 0.015 330);
+    --sidebar-primary: oklch(0.78 0.15 350);
+    --sidebar-primary-foreground: oklch(0.24 0.06 335);
+    --sidebar-accent: oklch(0.34 0.05 315);
+    --sidebar-accent-foreground: oklch(0.95 0.015 330);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.75 0.14 350);
 }
 
 @layer base {
@@ -178,30 +178,33 @@
 
     html {
         @apply font-sans;
-        font-feature-settings: "ss01", "ss02", "cv11";
         font-variant-ligatures: common-ligatures;
     }
 
+    /* Soft pastel cloudscape instead of a flat color */
     body {
-        background-color: var(--background);
         color: var(--foreground);
+        background-color: var(--background);
         background-image:
-            radial-gradient(circle at 1px 1px,
-                color-mix(in oklch, var(--foreground) 7%, transparent) 1px,
-                transparent 0);
-        background-size: 22px 22px;
-        background-position: 0 0;
+            radial-gradient(42rem 42rem at 10% -12%,
+                color-mix(in oklch, var(--primary) 10%, transparent), transparent 62%),
+            radial-gradient(38rem 38rem at 102% -4%,
+                color-mix(in oklch, var(--status-resolved) 12%, transparent), transparent 60%),
+            radial-gradient(50rem 46rem at 50% 118%,
+                color-mix(in oklch, var(--status-open) 9%, transparent), transparent 62%);
         background-attachment: fixed;
     }
 
     .dark body {
         background-image:
-            radial-gradient(circle at 1px 1px,
-                color-mix(in oklch, var(--foreground) 5%, transparent) 1px,
-                transparent 0);
+            radial-gradient(42rem 42rem at 10% -12%,
+                color-mix(in oklch, var(--primary) 14%, transparent), transparent 62%),
+            radial-gradient(38rem 38rem at 102% -4%,
+                color-mix(in oklch, var(--status-resolved) 10%, transparent), transparent 60%),
+            radial-gradient(50rem 46rem at 50% 118%,
+                color-mix(in oklch, var(--status-open) 10%, transparent), transparent 62%);
     }
 
-    /* Tabular numerals everywhere by default — a real data tool */
     .tabular,
     [class*="tabular"] {
         font-variant-numeric: tabular-nums;
@@ -212,23 +215,25 @@
    Custom utilities
    ────────────────────────────────────────────────────────────────────────── */
 @utility font-mono {
-    font-family: var(--font-mono);
-    font-feature-settings: "calt", "liga", "ss02";
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
 }
 
 @utility text-mono-xs {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-weight: 800;
     font-size: 0.6875rem;
     line-height: 1rem;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     font-variant-numeric: tabular-nums;
 }
 
 @utility text-display {
-    font-family: var(--font-sans);
-    font-weight: 600;
-    letter-spacing: -0.025em;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    letter-spacing: -0.01em;
 }
 
 @utility hairline {
@@ -238,19 +243,33 @@
 @utility surface-panel {
     background-color: var(--surface);
     border: 1px solid var(--hairline);
-    border-radius: calc(var(--radius));
+    border-radius: calc(var(--radius) * 1.4);
+    box-shadow: 0 10px 30px -12px color-mix(in oklch, var(--primary) 16%, transparent);
 }
 
-/* Animations: orchestrated reveal on first load */
+/* Soft candy shadows */
+@utility shadow-bubble {
+    box-shadow:
+        0 4px 14px -4px color-mix(in oklch, var(--primary) 20%, transparent),
+        0 14px 34px -10px color-mix(in oklch, var(--foreground) 12%, transparent);
+}
+
+@utility shadow-bubble-lg {
+    box-shadow:
+        0 10px 30px -8px color-mix(in oklch, var(--primary) 26%, transparent),
+        0 30px 70px -18px color-mix(in oklch, var(--foreground) 22%, transparent);
+}
+
+/* Animations: soft, springy, orchestrated */
 @keyframes operator-rise {
     from {
         opacity: 0;
-        transform: translateY(6px);
+        transform: translateY(14px) scale(0.985);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
 }
 
@@ -278,55 +297,100 @@
     }
 }
 
-@keyframes operator-scan {
+/* Springy pop for centered dialogs (bakes in the -50%/-50% centering) */
+@keyframes bubble-in {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -45%) scale(0.9);
+    }
+
+    60% {
+        opacity: 1;
+        transform: translate(-50%, -50.6%) scale(1.02);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+@keyframes bubble-out {
     from {
-        background-position: 0 0;
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
     }
 
     to {
-        background-position: 0 22px;
+        opacity: 0;
+        transform: translate(-50%, -47%) scale(0.95);
+    }
+}
+
+@keyframes bubble-float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
     }
 }
 
 @utility animate-rise {
-    animation: operator-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    animation: operator-rise 0.6s cubic-bezier(0.22, 1.2, 0.36, 1) backwards;
 }
 
 @utility animate-fade {
-    animation: operator-fade 0.6s ease-out backwards;
+    animation: operator-fade 0.7s ease-out backwards;
 }
 
 @utility animate-pulse-dot {
     animation: operator-pulse 1.6s ease-in-out infinite;
 }
 
-/* Dotted/grid pattern utilities for panels */
-@utility bg-grid {
-    background-image:
-        linear-gradient(to right, color-mix(in oklch, var(--foreground) 5%, transparent) 1px, transparent 1px),
-        linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 5%, transparent) 1px, transparent 1px);
-    background-size: 32px 32px;
+@utility animate-bubble-in {
+    animation: bubble-in 0.45s cubic-bezier(0.22, 1.2, 0.36, 1) both;
 }
 
-/* Status dot — the operator console signature */
+@utility animate-bubble-out {
+    animation: bubble-out 0.22s ease-in both;
+}
+
+@utility animate-bubble-float {
+    animation: bubble-float 5s ease-in-out infinite;
+}
+
+/* Pastel polka-bubble pattern for panels */
+@utility bg-grid {
+    background-image:
+        radial-gradient(circle at 2px 2px,
+            color-mix(in oklch, var(--primary) 14%, transparent) 2px,
+            transparent 0);
+    background-size: 26px 26px;
+}
+
+/* Status dot — soft candy halo */
 @utility status-dot {
     display: inline-block;
     width: 0.5rem;
     height: 0.5rem;
     border-radius: 9999px;
-    box-shadow: 0 0 0 2px color-mix(in oklch, currentColor 18%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in oklch, currentColor 22%, transparent);
 }
 
-/* Scrollbar — thin, monochrome, only on hover */
+/* Scrollbar — chunky, rounded, pastel */
 @layer base {
     * {
         scrollbar-width: thin;
-        scrollbar-color: color-mix(in oklch, var(--foreground) 18%, transparent) transparent;
+        scrollbar-color: color-mix(in oklch, var(--primary) 35%, transparent) transparent;
     }
 
     *::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: 10px;
+        height: 10px;
     }
 
     *::-webkit-scrollbar-track {
@@ -334,17 +398,17 @@
     }
 
     *::-webkit-scrollbar-thumb {
-        background-color: color-mix(in oklch, var(--foreground) 14%, transparent);
-        border-radius: 4px;
+        background-color: color-mix(in oklch, var(--primary) 30%, transparent);
+        border-radius: 9999px;
     }
 
     *::-webkit-scrollbar-thumb:hover {
-        background-color: color-mix(in oklch, var(--foreground) 28%, transparent);
+        background-color: color-mix(in oklch, var(--primary) 50%, transparent);
     }
 
     /* Selection */
     ::selection {
-        background-color: color-mix(in oklch, var(--signal) 50%, transparent);
+        background-color: color-mix(in oklch, var(--primary) 30%, transparent);
         color: var(--foreground);
     }
 }
