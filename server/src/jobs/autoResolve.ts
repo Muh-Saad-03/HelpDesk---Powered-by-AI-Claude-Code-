@@ -1,6 +1,7 @@
 /** @format */
 
 import type { Job, PgBoss } from "pg-boss";
+import * as Sentry from "@sentry/bun";
 import { SenderType, TicketStatus } from "core";
 import { autoResolveTicket } from "../ai.ts";
 import { prisma } from "../db.ts";
@@ -25,7 +26,19 @@ export async function registerAutoResolveWorker(boss: PgBoss): Promise<void> {
 		{ batchSize: 1, pollingIntervalSeconds: 2 },
 		async ([job]: Job<AutoResolveJob>[]) => {
 			if (!job) return;
-			await runAutoResolve(boss, job.data.ticketId);
+			try {
+				await runAutoResolve(boss, job.data.ticketId);
+			} catch (err) {
+				console.error(
+					`[${AUTO_RESOLVE_QUEUE}] job failed (ticketId=${job.data.ticketId}):`,
+					err,
+				);
+				Sentry.captureException(err, {
+					tags: { queue: AUTO_RESOLVE_QUEUE },
+					extra: { ticketId: job.data.ticketId },
+				});
+				throw err;
+			}
 		},
 	);
 }

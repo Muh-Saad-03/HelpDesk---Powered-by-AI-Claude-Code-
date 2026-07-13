@@ -1,6 +1,7 @@
 /** @format */
 
 import type { Job, PgBoss } from "pg-boss";
+import * as Sentry from "@sentry/bun";
 import { SenderType } from "core";
 import { prisma } from "../db.ts";
 import { sendReplyEmail } from "../email-out.ts";
@@ -23,7 +24,19 @@ export async function registerSendReplyWorker(boss: PgBoss): Promise<void> {
 		{ batchSize: 1, pollingIntervalSeconds: 2 },
 		async ([job]: Job<SendReplyJob>[]) => {
 			if (!job) return;
-			await runSendReply(job.data.replyId);
+			try {
+				await runSendReply(job.data.replyId);
+			} catch (err) {
+				console.error(
+					`[${SEND_REPLY_QUEUE}] job failed (replyId=${job.data.replyId}):`,
+					err,
+				);
+				Sentry.captureException(err, {
+					tags: { queue: SEND_REPLY_QUEUE },
+					extra: { replyId: job.data.replyId },
+				});
+				throw err;
+			}
 		},
 	);
 }
