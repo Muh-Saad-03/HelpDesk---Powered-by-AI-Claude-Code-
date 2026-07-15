@@ -19,6 +19,7 @@ import { startQueue, stopQueue } from "./queue.ts";
 import { usersRouter } from "./routes/users.ts";
 import { emailRouter } from "./routes/email.ts";
 import { ticketsRouter } from "./routes/tickets.ts";
+import { voiceRouter } from "./routes/voice.ts";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
@@ -54,6 +55,7 @@ app.get("/api/db/health", async (_req: Request, res: Response) => {
 app.use("/api/users", usersRouter);
 app.use("/api/email", emailRouter);
 app.use("/api/tickets", ticketsRouter);
+app.use("/api/voice", voiceRouter);
 
 // In production we serve the built React SPA from the same origin as the
 // API. This keeps the deployment to a single Railway service and avoids

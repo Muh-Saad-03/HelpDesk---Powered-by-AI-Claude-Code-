@@ -37,6 +37,11 @@ test.describe("Agent session", () => {
 
     // Admin-only link must not be in the navbar.
     await expect(nav.getByRole("link", { name: "Users" })).toHaveCount(0);
+
+    // The voice assistant widget is mounted on every authenticated page.
+    await expect(
+      page.getByRole("button", { name: "Voice assistant" }),
+    ).toBeVisible();
   });
 
   test("/users redirects to / (admin-only)", async ({ page }) => {

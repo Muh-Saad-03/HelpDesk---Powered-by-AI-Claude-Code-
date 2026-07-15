@@ -7,4 +7,5 @@ export * from "./schemas/inboundEmail.ts";
 export * from "./schemas/ticketsListQuery.ts";
 export * from "./schemas/updateTicket.ts";
 export * from "./schemas/createReply.ts";
+export * from "./schemas/voiceTools.ts";
 export * from "./types/ticket.ts";

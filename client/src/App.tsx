@@ -5,6 +5,7 @@ import { Home } from "./pages/Home";
 import { UsersPage } from "./pages/UsersPage";
 import { TicketsPage } from "./pages/TicketsPage";
 import { TicketDetailPage } from "./pages/TicketDetailPage";
+import { AuthenticatedLayout } from "./components/AuthenticatedLayout";
 import { RequireAuth } from "./components/RequireAuth";
 
 export function App() {
@@ -12,38 +13,19 @@ export function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route
-          path="/"
-          element={
-            <RequireAuth>
-              <Home />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/users"
-          element={
-            <RequireAuth role={Role.ADMIN}>
-              <UsersPage />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/tickets"
-          element={
-            <RequireAuth>
-              <TicketsPage />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/tickets/:id"
-          element={
-            <RequireAuth>
-              <TicketDetailPage />
-            </RequireAuth>
-          }
-        />
+        <Route element={<AuthenticatedLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route
+            path="/users"
+            element={
+              <RequireAuth role={Role.ADMIN}>
+                <UsersPage />
+              </RequireAuth>
+            }
+          />
+          <Route path="/tickets" element={<TicketsPage />} />
+          <Route path="/tickets/:id" element={<TicketDetailPage />} />
+        </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
