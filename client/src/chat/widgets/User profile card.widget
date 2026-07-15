@@ -1,0 +1,143 @@
+{
+  "version": "1.0",
+  "name": "User profile card",
+  "template": "{\"type\":\"Card\",\"size\":\"sm\",\"children\":[{\"type\":\"Col\",\"gap\":3,\"children\":[{\"type\":\"Row\",\"align\":\"center\",\"gap\":3,\"children\":[{\"type\":\"Box\",\"background\":\"alpha-10\",\"radius\":\"full\",\"padding\":2,\"children\":[{\"type\":\"Icon\",\"name\":\"user\",\"size\":\"xl\"}]},{\"type\":\"Col\",\"gap\":1,\"children\":[{\"type\":\"Title\",\"value\":{{ (name) | tojson }},\"size\":\"md\"},{\"type\":\"Text\",\"value\":{{ (email) | tojson }},\"size\":\"sm\",\"color\":\"secondary\"}]},{\"type\":\"Spacer\"},{\"type\":\"Badge\",\"label\":{{ (status) | tojson }},\"color\":{{ (statusColor) | tojson }}}]},{\"type\":\"Divider\"},{\"type\":\"Row\",\"gap\":4,\"children\":[{\"type\":\"Col\",\"gap\":0,\"children\":[{\"type\":\"Caption\",\"value\":\"Tickets\"},{\"type\":\"Title\",\"value\":{{ (tickets) | tojson }},\"size\":\"sm\"}]},{\"type\":\"Col\",\"gap\":0,\"children\":[{\"type\":\"Caption\",\"value\":\"Created\"},{\"type\":\"Text\",\"value\":{{ (createdDate) | tojson }},\"size\":\"sm\"}]}]}]}]}",
+  "jsonSchema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "email": {
+        "type": "string"
+      },
+      "status": {
+        "type": "string"
+      },
+      "statusColor": {
+        "type": "string",
+        "enum": [
+          "secondary",
+          "success",
+          "danger",
+          "warning",
+          "info",
+          "discovery"
+        ]
+      },
+      "tickets": {
+        "type": "string"
+      },
+      "createdDate": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "name",
+      "email",
+      "status",
+      "statusColor",
+      "tickets",
+      "createdDate"
+    ],
+    "additionalProperties": false
+  },
+  "outputJsonPreview": {
+    "type": "Card",
+    "size": "sm",
+    "children": [
+      {
+        "type": "Col",
+        "gap": 3,
+        "children": [
+          {
+            "type": "Row",
+            "align": "center",
+            "gap": 3,
+            "children": [
+              {
+                "type": "Box",
+                "background": "alpha-10",
+                "radius": "full",
+                "padding": 2,
+                "children": [
+                  {
+                    "type": "Icon",
+                    "name": "user",
+                    "size": "xl"
+                  }
+                ]
+              },
+              {
+                "type": "Col",
+                "gap": 1,
+                "children": [
+                  {
+                    "type": "Title",
+                    "value": "Leslie Alexander",
+                    "size": "md"
+                  },
+                  {
+                    "type": "Text",
+                    "value": "leslie.alexander@example.com",
+                    "size": "sm",
+                    "color": "secondary"
+                  }
+                ]
+              },
+              {
+                "type": "Spacer"
+              },
+              {
+                "type": "Badge",
+                "label": "Active",
+                "color": "success"
+              }
+            ]
+          },
+          {
+            "type": "Divider"
+          },
+          {
+            "type": "Row",
+            "gap": 4,
+            "children": [
+              {
+                "type": "Col",
+                "gap": 0,
+                "children": [
+                  {
+                    "type": "Caption",
+                    "value": "Tickets"
+                  },
+                  {
+                    "type": "Title",
+                    "value": "3",
+                    "size": "sm"
+                  }
+                ]
+              },
+              {
+                "type": "Col",
+                "gap": 0,
+                "children": [
+                  {
+                    "type": "Caption",
+                    "value": "Created"
+                  },
+                  {
+                    "type": "Text",
+                    "value": "Jul 10, 2026",
+                    "size": "sm"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "encodedWidget": "eyJpZCI6ImY3ZTUwYzI3LWM4MzgtNDgzMC04ZGQyLWIyOTFlOTMwYmNjMCIsIm5hbWUiOiJVc2VyIHByb2ZpbGUgY2FyZCIsInZpZXciOiI8Q2FyZCBzaXplPVwic21cIj5cbiAgPENvbCBnYXA9ezN9PlxuICAgIDxSb3cgYWxpZ249XCJjZW50ZXJcIiBnYXA9ezN9PlxuICAgICAgPEJveCBiYWNrZ3JvdW5kPVwiYWxwaGEtMTBcIiByYWRpdXM9XCJmdWxsXCIgcGFkZGluZz17Mn0-XG4gICAgICAgIDxJY29uIG5hbWU9XCJ1c2VyXCIgc2l6ZT1cInhsXCIgLz5cbiAgICAgIDwvQm94PlxuICAgICAgPENvbCBnYXA9ezF9PlxuICAgICAgICA8VGl0bGUgdmFsdWU9e25hbWV9IHNpemU9XCJtZFwiIC8-XG4gICAgICAgIDxUZXh0IHZhbHVlPXtlbWFpbH0gc2l6ZT1cInNtXCIgY29sb3I9XCJzZWNvbmRhcnlcIiAvPlxuICAgICAgPC9Db2w-XG4gICAgICA8U3BhY2VyIC8-XG4gICAgICA8QmFkZ2UgbGFiZWw9e3N0YXR1c30gY29sb3I9e3N0YXR1c0NvbG9yfSAvPlxuICAgIDwvUm93PlxuXG4gICAgPERpdmlkZXIgLz5cblxuICAgIDxSb3cgZ2FwPXs0fT5cbiAgICAgIDxDb2wgZ2FwPXswfT5cbiAgICAgICAgPENhcHRpb24gdmFsdWU9XCJUaWNrZXRzXCIgLz5cbiAgICAgICAgPFRpdGxlIHZhbHVlPXt0aWNrZXRzfSBzaXplPVwic21cIiAvPlxuICAgICAgPC9Db2w-XG4gICAgICA8Q29sIGdhcD17MH0-XG4gICAgICAgIDxDYXB0aW9uIHZhbHVlPVwiQ3JlYXRlZFwiIC8-XG4gICAgICAgIDxUZXh0IHZhbHVlPXtjcmVhdGVkRGF0ZX0gc2l6ZT1cInNtXCIgLz5cbiAgICAgIDwvQ29sPlxuICAgIDwvUm93PlxuICA8L0NvbD5cbjwvQ2FyZD4iLCJkZWZhdWx0U3RhdGUiOnsibmFtZSI6Ikxlc2xpZSBBbGV4YW5kZXIiLCJlbWFpbCI6Imxlc2xpZS5hbGV4YW5kZXJAZXhhbXBsZS5jb20iLCJzdGF0dXMiOiJBY3RpdmUiLCJzdGF0dXNDb2xvciI6InN1Y2Nlc3MiLCJ0aWNrZXRzIjoiMyIsImNyZWF0ZWREYXRlIjoiSnVsIDEwLCAyMDI2In0sInN0YXRlcyI6W10sInNjaGVtYSI6ImltcG9ydCB7IHogfSBmcm9tIFwiem9kXCJcblxuY29uc3QgV2lkZ2V0U3RhdGUgPSB6LnN0cmljdE9iamVjdCh7XG4gIG5hbWU6IHouc3RyaW5nKCksXG4gIGVtYWlsOiB6LnN0cmluZygpLFxuICBzdGF0dXM6IHouc3RyaW5nKCksXG4gIHN0YXR1c0NvbG9yOiB6LmVudW0oW1xuICAgIFwic2Vjb25kYXJ5XCIsXG4gICAgXCJzdWNjZXNzXCIsXG4gICAgXCJkYW5nZXJcIixcbiAgICBcIndhcm5pbmdcIixcbiAgICBcImluZm9cIixcbiAgICBcImRpc2NvdmVyeVwiLFxuICBdKSxcbiAgdGlja2V0czogei5zdHJpbmcoKSxcbiAgY3JlYXRlZERhdGU6IHouc3RyaW5nKCksXG59KVxuXG5leHBvcnQgZGVmYXVsdCBXaWRnZXRTdGF0ZSIsImpzb25TY2hlbWEiOnt9LCJzY2hlbWFNb2RlIjoiem9kIiwic2NoZW1hVmFsaWRpdHkiOiJ2YWxpZCIsInZpZXdWYWxpZGl0eSI6InZhbGlkIiwiZGVmYXVsdFN0YXRlVmFsaWRpdHkiOiJ2YWxpZCJ9"
+}

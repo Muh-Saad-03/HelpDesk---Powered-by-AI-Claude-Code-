@@ -1,0 +1,38 @@
+{
+	"type": "Card",
+	"size": "sm",
+	"children": [
+		{
+			"type": "Row",
+			"gap": 2,
+			"children": [
+				{
+					"type": "Box",
+					"size": 7,
+					"background": "green-500",
+					"radius": "full",
+					"align": "center",
+					"justify": "center",
+					"children": [
+						{
+							"type": "Icon",
+							"name": "check",
+							"color": "white",
+							"size": "sm"
+						}
+					]
+				},
+				{
+					"type": "Col",
+					"gap": 0,
+					"children": [
+						{ "type": "Title", "value": "Reply sent", "size": "sm" },
+						{ "type": "Caption", "value": "Emailed to the customer · {{createdAtLabel}}" }
+					]
+				}
+			]
+		},
+		{ "type": "Divider" },
+		{ "type": "Markdown", "value": "{{reply.body}}" }
+	]
+}

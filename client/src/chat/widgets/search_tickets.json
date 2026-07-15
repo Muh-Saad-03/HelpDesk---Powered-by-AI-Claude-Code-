@@ -1,0 +1,40 @@
+{
+	"type": "Card",
+	"children": [
+		{
+			"type": "Row",
+			"children": [
+				{ "type": "Title", "value": "Tickets" },
+				{ "type": "Spacer" },
+				{ "type": "Caption", "value": "{{totalLabel}}" }
+			]
+		},
+		{
+			"type": "ListView",
+			"children": [
+				{
+					"type": "ListViewItem",
+					"repeat": "tickets",
+					"onClickAction": {
+						"type": "open_ticket",
+						"payload": { "ticketId": "{{item.id}}" }
+					},
+					"children": [
+						{
+							"type": "Row",
+							"children": [
+								{ "type": "Text", "value": "{{item.subject}}" },
+								{ "type": "Spacer" },
+								{ "type": "Badge", "value": "{{item.status}}" }
+							]
+						},
+						{
+							"type": "Caption",
+							"value": "{{item.fromLabel}} · {{item.createdAtLabel}}"
+						}
+					]
+				}
+			]
+		}
+	]
+}

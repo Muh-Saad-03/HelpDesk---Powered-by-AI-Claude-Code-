@@ -4,6 +4,7 @@ import axios, { AxiosError } from "axios";
 import {
 	VOICE_TOOL_SCHEMAS,
 	type GetTicketArgs,
+	type ReplyToTicketArgs,
 	type SearchTicketsArgs,
 	type VoiceToolName,
 } from "core";
@@ -12,11 +13,12 @@ import {
 // through long lists.
 const PAGE_SIZE = 10;
 
-// Executes a Realtime function call by hitting the existing read-only ticket
-// endpoints with the user's own session cookie. Always resolves to a JSON
-// string (result or { error }) — the output goes back to the model over the
-// data channel, so errors must be returned, not thrown, for the assistant to
-// recover verbally.
+// Executes a Realtime function call by hitting the existing ticket endpoints
+// with the user's own session cookie. Result shapes intentionally match the
+// server-side chat tools (server/src/chatTools.ts) so both assistants bind
+// to the same widget templates. Always resolves to a JSON string (result or
+// { error }) — the output goes back to the model over the data channel, so
+// errors must be returned, not thrown, for the assistant to recover verbally.
 export async function executeVoiceTool(
 	name: string,
 	argsJson: string,
@@ -69,7 +71,8 @@ async function dispatch(name: VoiceToolName, args: unknown): Promise<unknown> {
 		case "get_ticket": {
 			const { ticket_id } = args as GetTicketArgs;
 			const res = await axios.get(`/api/tickets/${ticket_id}`, cfg);
-			return res.data;
+			// Unwrap { ticket } to the bare object — the chat tool's shape.
+			return res.data.ticket;
 		}
 		case "get_ticket_replies": {
 			const { ticket_id } = args as GetTicketArgs;
@@ -78,6 +81,15 @@ async function dispatch(name: VoiceToolName, args: unknown): Promise<unknown> {
 		}
 		case "get_ticket_stats": {
 			const res = await axios.get("/api/tickets/stats", cfg);
+			return res.data;
+		}
+		case "reply_to_ticket": {
+			const { ticket_id, body } = args as ReplyToTicketArgs;
+			const res = await axios.post(
+				`/api/tickets/${ticket_id}/replies`,
+				{ body },
+				cfg,
+			);
 			return res.data;
 		}
 	}

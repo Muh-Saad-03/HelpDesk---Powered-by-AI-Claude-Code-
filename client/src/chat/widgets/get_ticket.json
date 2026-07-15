@@ -1,0 +1,136 @@
+{
+	"type": "Card",
+	"size": "sm",
+	"children": [
+		{
+			"type": "Col",
+			"gap": 3,
+			"children": [
+				{
+					"type": "Row",
+					"align": "center",
+					"gap": 3,
+					"children": [
+						{
+							"type": "Box",
+							"background": "alpha-10",
+							"radius": "full",
+							"padding": 2,
+							"children": [
+								{
+									"type": "Icon",
+									"name": "user",
+									"size": "xl"
+								}
+							]
+						},
+						{
+							"type": "Col",
+							"gap": 1,
+							"children": [
+								{
+									"type": "Title",
+									"value": "{{fromLabel}}",
+									"size": "md"
+								},
+								{
+									"type": "Text",
+									"value": "{{fromEmail}}",
+									"size": "sm",
+									"color": "secondary"
+								}
+							]
+						},
+						{
+							"type": "Spacer"
+						},
+						{
+							"type": "Badge",
+							"label": "{{status}}"
+						}
+					]
+				},
+				{
+					"type": "Divider"
+				},
+				{
+					"type": "Col",
+					"gap": 0,
+					"children": [
+						{
+							"type": "Caption",
+							"value": "Subject"
+						},
+						{
+							"type": "Text",
+							"value": "{{subject}}",
+							"size": "sm"
+						}
+					]
+				},
+				{
+					"type": "Row",
+					"gap": 4,
+					"children": [
+						{
+							"type": "Col",
+							"gap": 0,
+							"children": [
+								{
+									"type": "Caption",
+									"value": "Category"
+								},
+								{
+									"type": "Title",
+									"value": "{{categoryLabel}}",
+									"size": "sm"
+								}
+							]
+						},
+						{
+							"type": "Col",
+							"gap": 0,
+							"children": [
+								{
+									"type": "Caption",
+									"value": "Opened"
+								},
+								{
+									"type": "Text",
+									"value": "{{createdAtLabel}}",
+									"size": "sm"
+								}
+							]
+						},
+						{
+							"type": "Col",
+							"gap": 0,
+							"children": [
+								{
+									"type": "Caption",
+									"value": "Assignee"
+								},
+								{
+									"type": "Text",
+									"value": "{{assigneeLabel}}",
+									"size": "sm"
+								}
+							]
+						},
+						{
+							"type": "Spacer"
+						},
+						{
+							"type": "Button",
+							"label": "Open ticket",
+							"onClickAction": {
+								"type": "open_ticket",
+								"payload": { "ticketId": "{{id}}" }
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,26 @@
+{
+	"type": "Card",
+	"children": [
+		{ "type": "Title", "value": "Conversation" },
+		{
+			"type": "ListView",
+			"children": [
+				{
+					"type": "ListViewItem",
+					"repeat": "replies",
+					"children": [
+						{
+							"type": "Row",
+							"children": [
+								{ "type": "Caption", "value": "{{item.senderLabel}}" },
+								{ "type": "Spacer" },
+								{ "type": "Caption", "value": "{{item.createdAtLabel}}" }
+							]
+						},
+						{ "type": "Text", "value": "{{item.body}}" }
+					]
+				}
+			]
+		}
+	]
+}

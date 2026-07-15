@@ -20,6 +20,7 @@ import { usersRouter } from "./routes/users.ts";
 import { emailRouter } from "./routes/email.ts";
 import { ticketsRouter } from "./routes/tickets.ts";
 import { voiceRouter } from "./routes/voice.ts";
+import { chatRouter } from "./routes/chat.ts";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
@@ -41,7 +42,9 @@ app.use(cors({ origin: trustedOrigins, credentials: true }));
 // Better Auth handler — must be mounted before express.json()
 app.all("/api/auth/*splat", toNodeHandler(auth));
 
-app.use(express.json());
+// 1mb (default 100kb): the chat endpoint re-posts the full UIMessage history
+// including tool outputs each turn, which outgrows 100kb in long sessions.
+app.use(express.json({ limit: "1mb" }));
 
 app.get("/api/health", (_req: Request, res: Response) => {
 	res.json({ status: "ok", uptime: process.uptime() });
@@ -56,6 +59,7 @@ app.use("/api/users", usersRouter);
 app.use("/api/email", emailRouter);
 app.use("/api/tickets", ticketsRouter);
 app.use("/api/voice", voiceRouter);
+app.use("/api/chat", chatRouter);
 
 // In production we serve the built React SPA from the same origin as the
 // API. This keeps the deployment to a single Railway service and avoids

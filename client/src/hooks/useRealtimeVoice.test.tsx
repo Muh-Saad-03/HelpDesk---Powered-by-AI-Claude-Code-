@@ -133,8 +133,9 @@ describe("useRealtimeVoice", () => {
 		expect(micTrack.stop).toHaveBeenCalled();
 	});
 
-	it("executes function calls and replies over the data channel", async () => {
-		const { result } = renderHook(() => useRealtimeVoice());
+	it("executes function calls, replies over the data channel, and surfaces the result", async () => {
+		const onToolResult = vi.fn();
+		const { result } = renderHook(() => useRealtimeVoice({ onToolResult }));
 		await connectHappy(result);
 
 		const dc = FakePeerConnection.last!.dc;
@@ -152,6 +153,12 @@ describe("useRealtimeVoice", () => {
 
 		await waitFor(() => expect(dc.send).toHaveBeenCalledTimes(2));
 		expect(executeVoiceTool).toHaveBeenCalledWith("get_ticket_stats", "{}");
+		expect(onToolResult).toHaveBeenCalledWith({
+			name: "get_ticket_stats",
+			callId: "call_1",
+			input: {},
+			output: { ok: true },
+		});
 		expect(JSON.parse(dc.send.mock.calls[0]![0] as string)).toEqual({
 			type: "conversation.item.create",
 			item: {
@@ -165,8 +172,12 @@ describe("useRealtimeVoice", () => {
 		});
 	});
 
-	it("appends completed transcripts for both speakers", async () => {
-		const { result } = renderHook(() => useRealtimeVoice());
+	it("fires transcript callbacks for both speakers", async () => {
+		const onUserTranscript = vi.fn();
+		const onAssistantTranscript = vi.fn();
+		const { result } = renderHook(() =>
+			useRealtimeVoice({ onUserTranscript, onAssistantTranscript }),
+		);
 		await connectHappy(result);
 
 		const dc = FakePeerConnection.last!.dc;
@@ -187,12 +198,12 @@ describe("useRealtimeVoice", () => {
 			});
 		});
 
-		await waitFor(() =>
-			expect(result.current.transcript).toEqual([
-				{ id: "i1", role: "user", text: "How many open tickets?" },
-				{ id: "i2", role: "assistant", text: "You have four open tickets." },
-			]),
-		);
+		await waitFor(() => {
+			expect(onUserTranscript).toHaveBeenCalledWith("How many open tickets?");
+			expect(onAssistantTranscript).toHaveBeenCalledWith(
+				"You have four open tickets.",
+			);
+		});
 	});
 
 	it("toggles the mic track on mute/unmute", async () => {

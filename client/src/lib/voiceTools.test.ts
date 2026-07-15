@@ -6,11 +6,12 @@ vi.mock("axios", async () => {
 	const actual = await vi.importActual<typeof import("axios")>("axios");
 	return {
 		...actual,
-		default: { get: vi.fn() },
+		default: { get: vi.fn(), post: vi.fn() },
 	};
 });
 
 const mockedGet = vi.mocked(axios.get);
+const mockedPost = vi.mocked(axios.post);
 
 describe("executeVoiceTool", () => {
 	beforeEach(() => {
@@ -32,8 +33,10 @@ describe("executeVoiceTool", () => {
 		expect(JSON.parse(out)).toEqual({ tickets: [], total: 0 });
 	});
 
-	it("get_ticket hits /api/tickets/:id", async () => {
-		mockedGet.mockResolvedValueOnce({ data: { id: "t1", subject: "Hi" } });
+	it("get_ticket hits /api/tickets/:id and unwraps the ticket", async () => {
+		mockedGet.mockResolvedValueOnce({
+			data: { ticket: { id: "t1", subject: "Hi" } },
+		});
 
 		const out = await executeVoiceTool(
 			"get_ticket",
@@ -69,6 +72,37 @@ describe("executeVoiceTool", () => {
 			withCredentials: true,
 		});
 		expect(JSON.parse(out)).toEqual({ total: 5 });
+	});
+
+	it("reply_to_ticket posts to /api/tickets/:id/replies", async () => {
+		mockedPost.mockResolvedValueOnce({
+			data: { reply: { id: "r9", body: "On it!" } },
+		});
+
+		const out = await executeVoiceTool(
+			"reply_to_ticket",
+			JSON.stringify({ ticket_id: "t1", body: "On it!" }),
+		);
+
+		expect(mockedPost).toHaveBeenCalledWith(
+			"/api/tickets/t1/replies",
+			{ body: "On it!" },
+			{ withCredentials: true },
+		);
+		expect(JSON.parse(out)).toEqual({ reply: { id: "r9", body: "On it!" } });
+	});
+
+	it("reply_to_ticket surfaces server errors instead of throwing", async () => {
+		const err = new AxiosError("Request failed");
+		err.response = { data: { error: "Ticket not found" } } as never;
+		mockedPost.mockRejectedValueOnce(err);
+
+		const out = await executeVoiceTool(
+			"reply_to_ticket",
+			JSON.stringify({ ticket_id: "missing", body: "Hello" }),
+		);
+
+		expect(JSON.parse(out)).toEqual({ error: "Ticket not found" });
 	});
 
 	it("returns an error string for an unknown tool", async () => {

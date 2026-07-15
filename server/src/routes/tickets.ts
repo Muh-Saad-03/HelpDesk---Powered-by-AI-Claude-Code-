@@ -6,37 +6,20 @@ import {
 	polishReplySchema,
 	Role,
 	SenderType,
-	TicketStatus,
 	ticketsListQuerySchema,
 	updateTicketSchema,
 } from "core";
 import { polishReplyText, summarizeTicketText } from "../ai.ts";
 import { prisma } from "../db.ts";
 import { requireRole } from "../middleware/requireRole.ts";
-import { enqueueSendReply } from "../queue.ts";
-
-const REPLY_SELECT = {
-	id: true,
-	body: true,
-	createdAt: true,
-	senderType: true,
-	authorId: true,
-	author: { select: { id: true, name: true, email: true } },
-} as const;
-
-const TICKET_DETAIL_SELECT = {
-	id: true,
-	subject: true,
-	body: true,
-	status: true,
-	category: true,
-	fromEmail: true,
-	fromName: true,
-	assigneeId: true,
-	assignee: { select: { id: true, name: true, email: true } },
-	createdAt: true,
-	updatedAt: true,
-} as const;
+import {
+	createTicketReply,
+	getTicketDetail,
+	getTicketReplies,
+	getTicketStats,
+	listTickets,
+	TICKET_DETAIL_SELECT,
+} from "../ticketQueries.ts";
 
 function firstIssueMessage(issues: readonly { message: string }[]): string {
 	return issues[0]?.message ?? "Invalid input";
@@ -53,83 +36,17 @@ ticketsRouter.get(
 			res.status(400).json({ error: firstIssueMessage(parsed.error.issues) });
 			return;
 		}
-		const { sortBy, sortOrder, status, category, q, page, pageSize } =
-			parsed.data;
-
-		// Tickets in NEW / PROCESSING are still being handled by the AI
-		// auto-resolve worker. Hide them from the agent list regardless of
-		// the caller's status filter — agents shouldn't see half-handled
-		// tickets, and once the worker finishes they'll surface as RESOLVED
-		// or OPEN.
-		const AI_HIDDEN_STATUSES: TicketStatus[] = [
-			TicketStatus.NEW,
-			TicketStatus.PROCESSING,
-		];
-		const visibleStatuses =
-			status && status.length > 0 ?
-				status.filter((s) => !AI_HIDDEN_STATUSES.includes(s))
-			:	[TicketStatus.OPEN, TicketStatus.RESOLVED, TicketStatus.CLOSED];
-
-		type Where = {
-			status: { in: TicketStatus[] };
-			category?: { in: typeof category };
-			OR?: { [k: string]: { contains: string; mode: "insensitive" } }[];
-		};
-		const where: Where = { status: { in: visibleStatuses } };
-		if (category && category.length > 0) where.category = { in: category };
-		if (q) {
-			where.OR = [
-				{ subject: { contains: q, mode: "insensitive" } },
-				{ fromEmail: { contains: q, mode: "insensitive" } },
-				{ fromName: { contains: q, mode: "insensitive" } },
-			];
-		}
-
-		const [tickets, total] = await prisma.$transaction([
-			prisma.ticket.findMany({
-				where,
-				select: {
-					id: true,
-					subject: true,
-					status: true,
-					category: true,
-					fromEmail: true,
-					fromName: true,
-					createdAt: true,
-				},
-				orderBy: { [sortBy]: sortOrder },
-				skip: (page - 1) * pageSize,
-				take: pageSize,
-			}),
-			prisma.ticket.count({ where }),
-		]);
-		res.json({ tickets, total, page, pageSize });
+		res.json(await listTickets(parsed.data));
 	},
 );
 
 // Must be declared before "/:id" — Express matches routes in declaration
 // order, so otherwise "stats" gets caught as an :id lookup and 404s.
-//
-// All aggregation lives in the get_ticket_stats() Postgres function (see
-// migration 20260505001253_add_ticket_stats_function). The handler is just
-// a pass-through: one round-trip, jsonb already in the response shape.
-type TicketStats = {
-	total: number;
-	open: number;
-	aiResolved: number;
-	aiResolvedPct: number | null;
-	avgResolutionMs: number | null;
-	daily: { date: string; count: number }[];
-};
-
 ticketsRouter.get(
 	"/stats",
 	requireRole(Role.ADMIN, Role.AGENT),
 	async (_req: Request, res: Response) => {
-		const rows = await prisma.$queryRaw<
-			[{ stats: TicketStats }]
-		>`SELECT get_ticket_stats() AS stats`;
-		res.json(rows[0].stats);
+		res.json(await getTicketStats());
 	},
 );
 
@@ -137,10 +54,7 @@ ticketsRouter.get(
 	"/:id",
 	requireRole(Role.ADMIN, Role.AGENT),
 	async (req: Request<{ id: string }>, res: Response) => {
-		const ticket = await prisma.ticket.findUnique({
-			where: { id: req.params.id },
-			select: TICKET_DETAIL_SELECT,
-		});
+		const ticket = await getTicketDetail(req.params.id);
 		if (!ticket) {
 			res.status(404).json({ error: "Ticket not found" });
 			return;
@@ -207,19 +121,11 @@ ticketsRouter.get(
 	"/:id/replies",
 	requireRole(Role.ADMIN, Role.AGENT),
 	async (req: Request<{ id: string }>, res: Response) => {
-		const ticket = await prisma.ticket.findUnique({
-			where: { id: req.params.id },
-			select: { id: true },
-		});
-		if (!ticket) {
+		const replies = await getTicketReplies(req.params.id);
+		if (!replies) {
 			res.status(404).json({ error: "Ticket not found" });
 			return;
 		}
-		const replies = await prisma.reply.findMany({
-			where: { ticketId: req.params.id },
-			orderBy: { createdAt: "asc" },
-			select: REPLY_SELECT,
-		});
 		res.json({ replies });
 	},
 );
@@ -234,28 +140,15 @@ ticketsRouter.post(
 			return;
 		}
 
-		const ticket = await prisma.ticket.findUnique({
-			where: { id: req.params.id },
-			select: { id: true },
-		});
-		if (!ticket) {
+		const reply = await createTicketReply(
+			req.params.id,
+			req.session!.user.id,
+			parsed.data.body,
+		);
+		if (!reply) {
 			res.status(404).json({ error: "Ticket not found" });
 			return;
 		}
-
-		const authorId = req.session!.user.id;
-		const reply = await prisma.reply.create({
-			data: {
-				ticketId: req.params.id,
-				senderType: SenderType.AGENT,
-				authorId,
-				body: parsed.data.body,
-			},
-			select: REPLY_SELECT,
-		});
-		// Email the customer out-of-band — pg-boss handles retries on
-		// SendGrid hiccups, and the API responds without waiting on it.
-		await enqueueSendReply(reply.id);
 		res.status(201).json({ reply });
 	},
 );

@@ -1,0 +1,146 @@
+{
+	"type": "Card",
+	"size": "sm",
+	"children": [
+		{
+			"type": "Col",
+			"gap": 2,
+			"children": [
+				{
+					"type": "Title",
+					"value": "Ticket status",
+					"size": "sm"
+				},
+				{
+					"type": "Row",
+					"gap": 3,
+					"children": [
+						{
+							"type": "Row",
+							"padding": 3,
+							"gap": 2,
+							"background": "surface-elevated-secondary",
+							"radius": "lg",
+							"align": "center",
+							"children": [
+								{
+									"type": "Box",
+									"size": 10,
+									"background": "blue-500",
+									"radius": "full",
+									"align": "center",
+									"justify": "center",
+									"children": [
+										{
+											"type": "Icon",
+											"name": "empty-circle",
+											"color": "white",
+											"size": "sm"
+										}
+									]
+								},
+								{
+									"type": "Col",
+									"gap": 0,
+									"children": [
+										{
+											"type": "Caption",
+											"value": "Open"
+										},
+										{
+											"type": "Title",
+											"value": "{{open}}",
+											"size": "md"
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "Row",
+							"padding": 3,
+							"gap": 2,
+							"background": "surface-elevated-secondary",
+							"radius": "lg",
+							"align": "center",
+							"children": [
+								{
+									"type": "Box",
+									"size": 10,
+									"background": "green-500",
+									"radius": "full",
+									"align": "center",
+									"justify": "center",
+									"children": [
+										{
+											"type": "Icon",
+											"name": "check-circle",
+											"color": "white",
+											"size": "sm"
+										}
+									]
+								},
+								{
+									"type": "Col",
+									"gap": 0,
+									"children": [
+										{
+											"type": "Caption",
+											"value": "Resolved"
+										},
+										{
+											"type": "Title",
+											"value": "{{resolved}}",
+											"size": "md"
+										}
+									]
+								}
+							]
+						},
+						{
+							"type": "Row",
+							"padding": 3,
+							"gap": 2,
+							"background": "surface-elevated-secondary",
+							"radius": "lg",
+							"align": "center",
+							"children": [
+								{
+									"type": "Box",
+									"size": 10,
+									"background": "gray-500",
+									"radius": "full",
+									"align": "center",
+									"justify": "center",
+									"children": [
+										{
+											"type": "Icon",
+											"name": "check-circle-filled",
+											"color": "white",
+											"size": "sm"
+										}
+									]
+								},
+								{
+									"type": "Col",
+									"gap": 0,
+									"children": [
+										{
+											"type": "Caption",
+											"value": "Closed"
+										},
+										{
+											"type": "Title",
+											"value": "{{closed}}",
+											"size": "md"
+										}
+									]
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+	]
+}

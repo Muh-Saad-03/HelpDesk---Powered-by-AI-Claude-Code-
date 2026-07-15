@@ -51,6 +51,19 @@ test.describe("Server policy — voice session requires auth", () => {
   });
 });
 
+test.describe("Server policy — chat requires auth", () => {
+  test("POST /api/chat without a session cookie is rejected", async ({
+    request,
+  }) => {
+    const response = await request.post("/api/chat", {
+      data: { messages: [] },
+    });
+
+    expect(response.status()).toBe(401);
+    expect(await response.json()).toEqual({ error: "Unauthorized" });
+  });
+});
+
 test.describe("Server policy — signup is disabled", () => {
   test("POST /api/auth/sign-up/email is rejected", async ({ request }) => {
     const response = await request.post("/api/auth/sign-up/email", {

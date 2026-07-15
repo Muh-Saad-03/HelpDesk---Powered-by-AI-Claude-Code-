@@ -32,10 +32,22 @@ export const getTicketRepliesArgsSchema = getTicketArgsSchema;
 
 export const getTicketStatsArgsSchema = z.object({});
 
+export const replyToTicketArgsSchema = z.object({
+	ticket_id: z.string().min(1).describe("The ticket id to reply on"),
+	body: z
+		.string()
+		.min(1)
+		.describe(
+			"The reply text, exactly as confirmed by the staff member. It is emailed to the customer verbatim.",
+		),
+});
+export type ReplyToTicketArgs = z.infer<typeof replyToTicketArgsSchema>;
+
 export const VOICE_TOOL_SCHEMAS = {
 	search_tickets: searchTicketsArgsSchema,
 	get_ticket: getTicketArgsSchema,
 	get_ticket_replies: getTicketRepliesArgsSchema,
 	get_ticket_stats: getTicketStatsArgsSchema,
+	reply_to_ticket: replyToTicketArgsSchema,
 } as const;
 export type VoiceToolName = keyof typeof VOICE_TOOL_SCHEMAS;

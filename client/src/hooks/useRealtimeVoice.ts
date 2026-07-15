@@ -8,26 +8,38 @@ const REALTIME_CALLS_URL = "https://api.openai.com/v1/realtime/calls";
 
 export type VoiceStatus = "idle" | "connecting" | "active" | "error";
 
-export type TranscriptEntry = {
-	id: string;
-	role: "user" | "assistant";
-	text: string;
+export type VoiceToolResult = {
+	name: string;
+	callId: string;
+	input: unknown;
+	output: unknown;
+};
+
+export type VoiceCallbacks = {
+	onUserTranscript?: (text: string) => void;
+	onAssistantTranscript?: (text: string) => void;
+	onToolResult?: (result: VoiceToolResult) => void;
 };
 
 // Owns the whole lifecycle of a Realtime voice call: mint an ephemeral
 // secret from our server, open a WebRTC peer connection straight to OpenAI
 // (mic track up, remote audio down, "oai-events" data channel for JSON
 // events), execute function calls against our own API, and tear everything
-// down on hangup/unmount.
-export function useRealtimeVoice() {
+// down on hangup/unmount. Transcripts and tool results are surfaced through
+// the callbacks — the caller owns the conversation view (ChatAssistant
+// merges them into the shared chat thread).
+export function useRealtimeVoice(callbacks?: VoiceCallbacks) {
 	const [status, setStatus] = useState<VoiceStatus>("idle");
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [muted, setMuted] = useState(false);
-	const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
 
 	const pcRef = useRef<RTCPeerConnection | null>(null);
 	const micStreamRef = useRef<MediaStream | null>(null);
 	const audioElRef = useRef<HTMLAudioElement | null>(null);
+	// Ref so a re-render with new callback identities never re-wires the
+	// live data channel.
+	const callbacksRef = useRef<VoiceCallbacks | undefined>(callbacks);
+	callbacksRef.current = callbacks;
 
 	const teardown = useCallback(() => {
 		micStreamRef.current?.getTracks().forEach((t) => t.stop());
@@ -46,7 +58,6 @@ export function useRealtimeVoice() {
 
 	const disconnect = useCallback(() => {
 		teardown();
-		setTranscript([]);
 		setErrorMessage(null);
 		setStatus("idle");
 	}, [teardown]);
@@ -62,6 +73,18 @@ export function useRealtimeVoice() {
 					const item = event.item;
 					if (item?.type !== "function_call") break;
 					const output = await executeVoiceTool(item.name, item.arguments);
+					let parsedInput: unknown = {};
+					try {
+						parsedInput = JSON.parse(item.arguments || "{}");
+					} catch {
+						// leave as {} — executeVoiceTool already reported the error
+					}
+					callbacksRef.current?.onToolResult?.({
+						name: item.name,
+						callId: item.call_id ?? crypto.randomUUID(),
+						input: parsedInput,
+						output: JSON.parse(output),
+					});
 					if (dc.readyState !== "open") break;
 					dc.send(
 						JSON.stringify({
@@ -78,22 +101,12 @@ export function useRealtimeVoice() {
 				}
 				case "conversation.item.input_audio_transcription.completed": {
 					if (!event.transcript) break;
-					const entry: TranscriptEntry = {
-						id: event.item_id ?? crypto.randomUUID(),
-						role: "user",
-						text: event.transcript,
-					};
-					setTranscript((t) => [...t, entry]);
+					callbacksRef.current?.onUserTranscript?.(event.transcript);
 					break;
 				}
 				case "response.output_audio_transcript.done": {
 					if (!event.transcript) break;
-					const entry: TranscriptEntry = {
-						id: event.item_id ?? crypto.randomUUID(),
-						role: "assistant",
-						text: event.transcript,
-					};
-					setTranscript((t) => [...t, entry]);
+					callbacksRef.current?.onAssistantTranscript?.(event.transcript);
 					break;
 				}
 			}
@@ -115,7 +128,6 @@ export function useRealtimeVoice() {
 		}
 
 		setStatus("connecting");
-		setTranscript([]);
 		try {
 			const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
 			micStreamRef.current = mic;
@@ -200,7 +212,6 @@ export function useRealtimeVoice() {
 		status,
 		errorMessage,
 		muted,
-		transcript,
 		connect,
 		disconnect,
 		toggleMute,
